@@ -1,0 +1,20 @@
+{
+  "name": "Riverside Classics",
+  "tagline": "Classic cars and trucks, hand-picked and ready to drive.",
+  "headline": "Classic cars with a story.",
+  "subheadline": "We find, restore and sell the kind of cars you grew up wanting.",
+  "since": "2005",
+  "phone": "(919) 555-0123",
+  "email": "sales@example.com",
+  "address": "123 Main Street, Raleigh, NC 27601",
+  "hours": [
+    "Mon – Fri: 9am – 6pm",
+    "Sat: 10am – 4pm",
+    "Sun: By appointment"
+  ],
+  "social": {
+    "Facebook": "",
+    "Instagram": "",
+    "YouTube": ""
+  }
+}
