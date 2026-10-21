@@ -64,18 +64,39 @@ Put an underscore in front of the folder name: `_1966 Pontiac GTO`. Folders star
 | `assets/about.jpg` | Optional. If you add this file it appears on the About page |
 | `assets/style.css` | Colors and fonts (the colors are at the top of the file) |
 
-## Hosting requirements
+## Two ways to host it
+
+The same folders, `site.json` and `about.txt` power both options, with the same design.
+
+### Option A: GitHub Pages (free, no PHP)
+
+GitHub builds the site for you every time you push a change to `main`
+(`.github/workflows/pages.yml` runs `scripts/build_static.py`). Nothing to install.
+
+**One-time setup:**
+1. Your repository must be **public** (GitHub Pages on private repos needs a paid plan).
+2. On GitHub go to **Settings → Pages**, and under *Build and deployment* set **Source** to **GitHub Actions**.
+3. Go to the **Actions** tab, open the latest *Build and deploy site to GitHub Pages* run and click **Re-run all jobs**
+   (or just push any change). When it turns green, your site is at `https://<your-username>.github.io/<repo-name>/`.
+4. Optional: add your own domain under Settings → Pages → *Custom domain*.
+
+**Adding a car:** on GitHub, open the `cars` folder, choose **Add file → Upload files**, and drag in a folder that has
+the description `.txt` and the photos (the folder name is the car's title), then click **Commit changes**. About a minute
+later the site is updated. To mark a car sold, move its folder into `sold/`; to remove it, delete the folder.
+Cars are ordered by when their folder was last changed, newest first.
+
+You can also run the builder yourself to preview: `python3 scripts/build_static.py`, then open `dist/index.html`.
+
+### Option B: a PHP web host
 
 You need web hosting that runs **PHP 7.4 or newer**. Almost every standard hosting plan does (Bluehost,
 SiteGround, HostGator, DreamHost, cPanel hosts, and so on). Upload the whole folder with FTP or the host's file manager.
+In this mode the site updates **instantly** when you add or remove a folder on the server, with no build step.
 
-Static-only hosts (GitHub Pages, Netlify's free static hosting, and website builders like GoDaddy Website Builder or
-Wix) **do not run PHP** and won't work.
+Website builders like GoDaddy Website Builder or Wix do not run PHP and won't work.
 
-## Previewing on your own computer
-
-If PHP is installed: open a terminal in this folder and run `php -S localhost:8000`, then open http://localhost:8000.
-Without PHP installed, XAMPP (Windows/Mac) or MAMP (Mac) give you a free local PHP server.
+To preview on your own computer: if PHP is installed, run `php -S localhost:8000` in this folder and open
+http://localhost:8000. Without PHP, XAMPP or MAMP give you a free local PHP server.
 
 ## Sample data
 
@@ -84,10 +105,10 @@ The cars in `cars/` and `sold/` are placeholder samples with placeholder photos.
 ## File layout
 
 ```
-index.php  inventory.php  sold.php  car.php  about.php  contact.php
-site.json  about.txt
-assets/    style.css, app.js
-includes/  shared PHP code (do not delete)
-cars/      one folder per car for sale
-sold/      one folder per sold car
+cars/      one folder per car for sale        (used by both options)
+sold/      one folder per sold car            (used by both options)
+site.json  about.txt  assets/                 (used by both options)
+
+scripts/build_static.py, .github/workflows/pages.yml   Option A: GitHub Pages
+index.php inventory.php sold.php car.php about.php contact.php, includes/   Option B: PHP host
 ```
