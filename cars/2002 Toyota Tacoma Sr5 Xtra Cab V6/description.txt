@@ -1,0 +1,9 @@
+Status: Just In
+Price: $25,000
+Year: 2002
+Mileage: 75,000
+Color: Green
+Engine: V6
+Transmission: Automatic
+
+Amazing 2002 Tacoma with only 75,000 original miles. Beautiful gray interior.
