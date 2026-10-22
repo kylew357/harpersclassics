@@ -1,20 +1,50 @@
 # Classic Car Dealership Website
 
-No build step. No Node.js. The site reads the `cars/` and `sold/` folders every time a page loads, so
-**adding or removing a folder updates the website immediately.**
+A static website hosted free on GitHub Pages. No PHP and no server. You manage the inventory from your
+iPhone with a built-in admin page, or by adding folders to the repo.
 
-## Adding a car
+Live site: https://kylew357.github.io/harpersclasssics/
+Admin page: https://kylew357.github.io/harpersclasssics/admin/
+
+## Add and edit cars from your iPhone
+
+The admin page lets you take photos, fill in the details and publish. Photos are resized on your phone
+before they upload, so there is nothing to resize by hand.
+
+**One-time setup (about 3 minutes):**
+1. In Safari, sign in to GitHub and open
+   [Settings → Developer settings → Fine-grained tokens → Generate new token](https://github.com/settings/personal-access-tokens/new).
+2. Name it "Site admin" and choose an expiration (up to one year; you'll make a new one when it expires).
+3. Under **Repository access** choose **Only select repositories** and pick this repository.
+4. Under **Permissions → Repository permissions** set **Contents** to **Read and write**.
+5. Generate the token and copy it.
+6. Open the admin page above, enter the repository name (`kylew357/harpersclasssics`), paste the token and sign in.
+7. Optional: tap the Share button in Safari and choose **Add to Home Screen** so the admin page opens like an app.
+
+**Every day:**
+- **Add a car:** tap *+ Add a car*, fill in the title, price and details, tap *Add photos* (pick from your library or take
+  new ones), then tap *Publish to site*.
+- **Edit a car:** tap *Edit* to change any detail, add or remove photos, or choose the cover photo (★).
+- **Mark sold:** tap *Mark sold*. It moves to the Sold page. *Back for sale* undoes it.
+- **Delete:** tap *Delete* to remove a car and its photos.
+- **Phone, hours and About text:** tap *Edit site info*.
+
+Changes go live about a minute after you publish.
+
+**About the token:** it is saved only in the browser on your phone, and it can only touch this one repository.
+If you lose your phone, delete the token in GitHub's token settings. Anyone can open the admin page address,
+but it does nothing without a token.
+
+## Add a car without the admin page
+
+You can also add folders directly in the repo (on GitHub: *Add file → Upload files*, or with git).
 
 1. Create a folder inside `cars/`. **The folder name is the car's title**, e.g. `cars/1966 Pontiac GTO/`
 2. Put a text file in it (any name ending in `.txt`, e.g. `description.txt`).
-3. Drop the photos into the same folder.
+3. Add the photos to the same folder.
 
-Done. It appears on the Inventory page (and the newest three on the home page).
-
-## When a car sells
-
-Move its folder from `cars/` into `sold/`. It disappears from inventory and shows up on the Sold page
-with a "Sold" badge. Delete the folder to remove it entirely.
+Photos of any size are fine. When the site builds, they are automatically shrunk, rotated upright and converted
+to JPEG (iPhone HEIC photos included), and small thumbnails are made for the gallery.
 
 ## The description file
 
@@ -39,76 +69,54 @@ More paragraphs (after a blank line) only show on the car's own page.
 
 ## Photos
 
-- `.jpg`, `.jpeg`, `.png`, `.webp`, `.gif`, `.avif`, `.svg`
-- Shown in alphabetical order. Name them `01-front.jpg`, `02-interior.jpg`, ... to control the order.
+- The admin page names them for you. If you add photos by hand, they show in alphabetical order, so
+  `01-front.jpg`, `02-interior.jpg`, ... controls the order.
 - A file named `cover.jpg` is always the first photo and the tile picture.
-- **Resize photos before uploading** (about 1600px wide is plenty). Straight-from-phone photos are huge
-  and will make the inventory page slow.
-- Visitors can click the main photo for a full-screen viewer with arrows.
+- Visitors can click the main photo on a car page for a full-screen viewer with arrows.
 
 ## Order of cars
 
-Newest folders first. Adding or editing a car's folder moves it to the top.
+Newest first, by when a car's folder was last changed.
 
 ## Hiding a car without deleting it
 
 Put an underscore in front of the folder name: `_1966 Pontiac GTO`. Folders starting with `_` or `.` are ignored.
 
+## How it works
+
+Every time something is pushed to `main`, a GitHub Action (`.github/workflows/pages.yml`) runs
+`scripts/build_static.py`. It reads `cars/`, `sold/`, `site.json` and `about.txt`, resizes the photos, writes the
+pages into `dist/`, and publishes that to GitHub Pages. The admin page (`admin/index.html`) is a single file that
+talks to GitHub's API to create those commits for you.
+
+GitHub Pages must be set to deploy from **GitHub Actions** (Settings → Pages → Source). The repository must be
+public on the free plan.
+
+To preview on a computer: `pip install pillow pillow-heif`, then `python3 scripts/build_static.py` and open
+`dist/index.html`. Without Pillow the site still builds, but photos are copied without resizing.
+
 ## Other things you can edit
 
 | File | What it controls |
 | --- | --- |
-| `site.json` | Dealership name, headline, phone, email, address, hours, social links |
+| `site.json` | Business name, headline, phone, email, address, hours, social links (also editable in the admin page) |
 | `about.txt` | The About page text (blank line between paragraphs) |
 | `assets/hero.jpg` | Optional. If you add this file it becomes the home page hero background |
 | `assets/about.jpg` | Optional. If you add this file it appears on the About page |
 | `assets/style.css` | Colors and fonts (the colors are at the top of the file) |
 
-## Two ways to host it
-
-The same folders, `site.json` and `about.txt` power both options, with the same design.
-
-### Option A: GitHub Pages (free, no PHP)
-
-GitHub builds the site for you every time you push a change to `main`
-(`.github/workflows/pages.yml` runs `scripts/build_static.py`). Nothing to install.
-
-**One-time setup:**
-1. Your repository must be **public** (GitHub Pages on private repos needs a paid plan).
-2. On GitHub go to **Settings → Pages**, and under *Build and deployment* set **Source** to **GitHub Actions**.
-3. Go to the **Actions** tab, open the latest *Build and deploy site to GitHub Pages* run and click **Re-run all jobs**
-   (or just push any change). When it turns green, your site is at `https://<your-username>.github.io/<repo-name>/`.
-4. Optional: add your own domain under Settings → Pages → *Custom domain*.
-
-**Adding a car:** on GitHub, open the `cars` folder, choose **Add file → Upload files**, and drag in a folder that has
-the description `.txt` and the photos (the folder name is the car's title), then click **Commit changes**. About a minute
-later the site is updated. To mark a car sold, move its folder into `sold/`; to remove it, delete the folder.
-Cars are ordered by when their folder was last changed, newest first.
-
-You can also run the builder yourself to preview: `python3 scripts/build_static.py`, then open `dist/index.html`.
-
-### Option B: a PHP web host
-
-You need web hosting that runs **PHP 7.4 or newer**. Almost every standard hosting plan does (Bluehost,
-SiteGround, HostGator, DreamHost, cPanel hosts, and so on). Upload the whole folder with FTP or the host's file manager.
-In this mode the site updates **instantly** when you add or remove a folder on the server, with no build step.
-
-Website builders like GoDaddy Website Builder or Wix do not run PHP and won't work.
-
-To preview on your own computer: if PHP is installed, run `php -S localhost:8000` in this folder and open
-http://localhost:8000. Without PHP, XAMPP or MAMP give you a free local PHP server.
-
 ## Sample data
 
-The cars in `cars/` and `sold/` are placeholder samples with placeholder photos. Delete those folders when you add your real inventory.
+The cars in `cars/` and `sold/` are placeholders with placeholder photos. Delete them (use *Delete* in the admin page)
+when you add your real inventory.
 
 ## File layout
 
 ```
-cars/      one folder per car for sale        (used by both options)
-sold/      one folder per sold car            (used by both options)
-site.json  about.txt  assets/                 (used by both options)
-
-scripts/build_static.py, .github/workflows/pages.yml   Option A: GitHub Pages
-index.php inventory.php sold.php car.php about.php contact.php, includes/   Option B: PHP host
+cars/      one folder per car for sale
+sold/      one folder per sold car
+site.json  about.txt  assets/
+admin/index.html                  the phone admin page
+scripts/build_static.py           builds the site
+.github/workflows/pages.yml       builds and publishes on every push
 ```

@@ -26,6 +26,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Install image libraries (resize photos, read iPhone HEIC)
+        run: pip install pillow pillow-heif
       - name: Build the site
         run: python scripts/build_static.py
       - uses: actions/configure-pages@v5

@@ -1,0 +1,652 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Site Admin">
+<meta name="theme-color" content="#faf9f6">
+<title>Site Admin</title>
+<style>
+:root{--bg:#faf9f6;--surface:#fff;--ink:#14120f;--muted:#6c675f;--line:#e7e3dc;--accent:#b4381f;--accent-dark:#8f2b17;--danger:#a3200f;--r:14px}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;font:16px/1.5 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);-webkit-text-size-adjust:100%}
+.bar{position:sticky;top:0;z-index:20;background:rgba(250,249,246,.94);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top)}
+.bar-in{max-width:640px;margin:0 auto;display:flex;align-items:center;gap:6px;height:56px;padding:0 10px}
+.bar h1{font:600 1.2rem Georgia,"Times New Roman",serif;margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.icon{width:44px;height:44px;border:0;background:none;font-size:2rem;line-height:1;color:var(--ink);cursor:pointer;border-radius:50%}
+main{max-width:640px;margin:0 auto;padding:16px 16px calc(130px + env(safe-area-inset-bottom))}
+h2{font:600 1.35rem Georgia,serif;margin:28px 0 12px}
+h2 small{font:400 .9rem -apple-system,system-ui,sans-serif;color:var(--muted)}
+p{margin:0 0 12px}
+a{color:var(--accent)}
+.hint,small{color:var(--muted);font-size:.88rem}
+.hint{margin:8px 0 0}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 20px;border-radius:999px;border:1.5px solid var(--ink);background:none;color:var(--ink);font:600 1rem inherit;font-family:inherit;cursor:pointer;text-decoration:none}
+.btn:active{opacity:.7}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.big{width:100%;min-height:54px;font-size:1.08rem}
+.btn.sm{min-height:40px;padding:0 14px;font-size:.92rem}
+.btn.danger{border-color:var(--danger);color:var(--danger)}
+.btn:disabled{opacity:.45}
+
+label{display:block;margin:0 0 16px;font-weight:600}
+label small{font-weight:400;display:block}
+input,select,textarea{display:block;width:100%;margin-top:6px;padding:12px 14px;min-height:48px;font:400 16px/1.4 inherit;font-family:inherit;color:var(--ink);background:var(--surface);border:1.5px solid var(--line);border-radius:12px;-webkit-appearance:none;appearance:none}
+select{background-image:linear-gradient(45deg,transparent 50%,#666 50%),linear-gradient(135deg,#666 50%,transparent 50%);background-position:calc(100% - 20px) 50%,calc(100% - 14px) 50%;background-size:6px 6px;background-repeat:no-repeat;padding-right:38px}
+textarea{min-height:140px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ink)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:12px}
+
+.car{display:grid;grid-template-columns:84px 1fr;gap:12px;align-items:center}
+.car .th{width:84px;height:62px;border-radius:10px;object-fit:cover;background:#e8e4dc}
+.car .nm{font-weight:600;line-height:1.25}
+.car .sub{color:var(--muted);font-size:.85rem}
+.car .acts{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
+
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.ph{position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;background:#e8e4dc;border:3px solid transparent}
+.ph.cover{border-color:var(--accent)}
+.ph img{width:100%;height:100%;object-fit:cover;display:block}
+.ph button{position:absolute;width:34px;height:34px;border:0;border-radius:50%;background:rgba(20,18,15,.72);color:#fff;font-size:1.2rem;line-height:1;cursor:pointer}
+.ph .x{top:4px;right:4px}
+.ph .star{bottom:4px;left:4px;font-size:1.05rem}
+.ph.cover .star{background:var(--accent)}
+.ph.gone{opacity:.35}
+.ph.gone .x{background:var(--accent)}
+.pick{position:relative;display:flex;align-items:center;justify-content:center;min-height:52px;border:1.5px dashed var(--muted);border-radius:12px;font-weight:600;cursor:pointer;margin:0}
+.pick input{position:absolute;inset:0;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+
+.kv{display:grid;grid-template-columns:1fr 1.4fr 44px;gap:8px;align-items:start;margin-bottom:8px}
+.kv input{margin-top:0}
+.kv .icon{font-size:1.5rem;color:var(--muted)}
+
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:15;background:rgba(250,249,246,.96);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom))}
+.dock-in{max-width:640px;margin:0 auto}
+
+#overlay{position:fixed;inset:0;z-index:50;background:rgba(250,249,246,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center}
+.spin{width:38px;height:38px;border:4px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:s 0.8s linear infinite}
+@keyframes s{to{transform:rotate(360deg)}}
+#toast{position:fixed;left:16px;right:16px;bottom:calc(86px + env(safe-area-inset-bottom));z-index:60;max-width:608px;margin:0 auto;background:var(--ink);color:#fff;padding:14px 18px;border-radius:14px;font-size:.95rem;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+#toast.err{background:var(--danger)}
+.steps{padding-left:20px;margin:0 0 16px}
+.steps li{margin-bottom:6px}
+.links{display:flex;flex-direction:column;gap:10px;margin-top:28px}
+.empty{color:var(--muted);padding:6px 0 14px}
+</style>
+</head>
+<body>
+<header class="bar"><div class="bar-in">
+  <button id="back" class="icon" type="button" aria-label="Back" hidden>&#8249;</button>
+  <h1 id="title">Site admin</h1>
+</div></header>
+<main id="app"></main>
+<div id="overlay" hidden><div class="spin"></div><p id="overlay-msg"></p></div>
+<div id="toast" hidden role="status"></div>
+
+<script>
+(() => {
+'use strict';
+
+/* ---------------------------------------------------------------- helpers */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const natcmp = (a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'});
+const enc = p => p.split('/').map(encodeURIComponent).join('/');
+const stemOf = n => n.replace(/\.[^.]+$/, '');
+const extOf = n => (n.match(/\.[^.]+$/) || [''])[0].toLowerCase();
+const IMG_EXT = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.avif', '.svg', '.heic', '.heif'];
+const isImg = n => IMG_EXT.includes(extOf(n));
+const MAX_SIDE = 1600, QUALITY = 0.82;
+const STD = ['Price', 'Year', 'Mileage', 'Color', 'Engine', 'Transmission', 'Drivetrain'];
+const STATUSES = ['Just In', 'Sale Pending', 'Price Reduced'];
+const SPEC_RE = /^([A-Za-z][A-Za-z0-9 \/]{0,24}):\s*(.+)$/;
+
+const store = {
+  get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} },
+  del: k => { try { localStorage.removeItem(k); } catch (e) {} }
+};
+
+const state = {repo: '', token: '', branch: 'main', entries: [], cars: [], head: null};
+let form = null, uid = 0;
+
+function guessRepo() {
+  const m = location.hostname.match(/^([^.]+)\.github\.io$/i);
+  if (!m) return '';
+  const seg = location.pathname.split('/').filter(Boolean)[0];
+  return (!seg || seg === 'admin') ? m[1] + '.github.io' : m[1] + '/' + seg;
+}
+
+/* ---------------------------------------------------------------- UI plumbing */
+const app = $('#app');
+function setTitle(t, back) { $('#title').textContent = t; $('#back').hidden = !back; }
+function busy(msg) { $('#overlay-msg').textContent = msg || 'Working…'; $('#overlay').hidden = false; }
+function idle() { $('#overlay').hidden = true; }
+let toastTimer;
+function toast(msg, err) {
+  const t = $('#toast');
+  t.textContent = msg; t.className = err ? 'err' : ''; t.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.hidden = true; }, err ? 9000 : 6000);
+}
+
+/* ---------------------------------------------------------------- GitHub API */
+function friendly(status, j) {
+  const msg = (j && j.message) || '';
+  if (status === 401) return 'GitHub rejected the token. It may have expired. Sign out and enter a new one.';
+  if (status === 403) return 'GitHub said no (403). Check that your token has "Contents: Read and write" access to this repository. ' + msg;
+  if (status === 404) return 'Not found. Check the repository name, and that your token has access to it.';
+  return msg || ('GitHub request failed (' + status + ').');
+}
+async function api(path, method, body) {
+  const url = path.startsWith('http') ? path : 'https://api.github.com/repos/' + state.repo + path;
+  let r;
+  try {
+    r = await fetch(url, {
+      method: method || 'GET', cache: 'no-store',
+      headers: {Authorization: 'Bearer ' + state.token, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'Content-Type': 'application/json'},
+      body: body ? JSON.stringify(body) : undefined
+    });
+  } catch (e) {
+    throw new Error('Could not reach GitHub. Check your connection and try again.');
+  }
+  if (r.ok) return r.status === 204 ? null : r.json();
+  const j = await r.json().catch(() => ({}));
+  const err = new Error(friendly(r.status, j));
+  err.status = r.status; err.api = j;
+  throw err;
+}
+async function loadHead() {
+  const ref = await api('/git/ref/heads/' + state.branch);
+  const c = await api('/git/commits/' + ref.object.sha);
+  return {commit: ref.object.sha, tree: c.tree.sha};
+}
+async function readBlob(sha) {
+  const b = await api('/git/blobs/' + sha);
+  const bin = atob((b.content || '').replace(/\s/g, ''));
+  return new TextDecoder().decode(Uint8Array.from(bin, ch => ch.charCodeAt(0)));
+}
+async function pool(items, n, fn) {
+  let i = 0, failed = null;
+  const worker = async () => {
+    while (i < items.length && !failed) {
+      const item = items[i++];
+      try { await fn(item); } catch (e) { failed = e; throw e; }
+    }
+  };
+  await Promise.all(Array.from({length: Math.min(n, items.length)}, worker));
+}
+// changes: [{path, text|b64|sha}] to add/replace, [{path, del:true}] to remove. One commit.
+async function commit(changes, message, progress) {
+  const blobs = new Array(changes.length);
+  const uploads = changes.map((c, i) => i).filter(i => changes[i].text != null || changes[i].b64 != null);
+  let done = 0;
+  await pool(uploads, 3, async i => {
+    const c = changes[i];
+    const r = await api('/git/blobs', 'POST', c.b64 != null ? {content: c.b64, encoding: 'base64'} : {content: c.text, encoding: 'utf-8'});
+    blobs[i] = r.sha;
+    if (progress) progress(++done, uploads.length);
+  });
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const h = await loadHead();
+      const tree = changes.map((c, i) => ({path: c.path, mode: '100644', type: 'blob', sha: c.del ? null : (blobs[i] || c.sha)}));
+      const t = await api('/git/trees', 'POST', {base_tree: h.tree, tree});
+      const cm = await api('/git/commits', 'POST', {message, tree: t.sha, parents: [h.commit]});
+      await api('/git/refs/heads/' + state.branch, 'PATCH', {sha: cm.sha});
+      return;
+    } catch (e) {
+      if (attempt < 2 && e.status === 422 && /fast.?forward/i.test((e.api && e.api.message) || e.message)) continue;
+      throw e;
+    }
+  }
+}
+
+/* ---------------------------------------------------------------- repo contents */
+function groupCars(entries) {
+  const map = {};
+  entries.forEach(e => {
+    if (e.type !== 'blob') return;
+    const p = e.path.split('/');
+    if (p.length !== 3 || (p[0] !== 'cars' && p[0] !== 'sold')) return;
+    if (p[1][0] === '_' || p[1][0] === '.') return;
+    const key = p[0] + '/' + p[1];
+    (map[key] = map[key] || {key, kind: p[0], name: p[1], files: []}).files.push({name: p[2], sha: e.sha});
+  });
+  return Object.values(map).map(c => {
+    c.files.sort((a, b) => natcmp(a.name, b.name));
+    c.desc = c.files.find(f => extOf(f.name) === '.txt') || null;
+    c.photos = c.files.filter(f => isImg(f.name));
+    const ci = c.photos.findIndex(f => stemOf(f.name).toLowerCase() === 'cover');
+    if (ci > 0) c.photos.unshift(c.photos.splice(ci, 1)[0]);
+    return c;
+  });
+}
+async function refresh() {
+  const h = await loadHead();
+  const t = await api('/git/trees/' + h.tree + '?recursive=1');
+  state.head = h; state.entries = t.tree; state.cars = groupCars(t.tree);
+}
+const rawUrl = path => 'https://raw.githubusercontent.com/' + state.repo + '/' + state.branch + '/' + enc(path);
+function liveThumb(c, f) {
+  const e = extOf(f.name);
+  if (e === '.gif' || e === '.svg') return '../' + c.kind + '/' + enc(c.name) + '/' + encodeURIComponent(f.name);  // no thumbnails for these
+  const out = (e === '.jpg' || e === '.jpeg') ? f.name : stemOf(f.name) + '.jpg';
+  return '../thumbs/' + c.kind + '/' + enc(c.name) + '/' + encodeURIComponent(out);
+}
+
+/* ---------------------------------------------------------------- description format */
+function parseDesc(raw) {
+  raw = raw.replace(/\r\n?/g, '\n').trim();
+  let blocks = raw ? raw.split(/\n\s*\n/) : [];
+  let specs = [];
+  if (blocks.length) {
+    const parsed = []; let all = true;
+    for (const line of blocks[0].split('\n')) {
+      const m = SPEC_RE.exec(line.trim());
+      if (m) parsed.push([m[1].trim(), m[2].trim()]); else { all = false; break; }
+    }
+    if (all && parsed.length) { specs = parsed; blocks = blocks.slice(1); }
+  }
+  return {specs, paras: blocks.map(p => p.replace(/\s*\n\s*/g, ' ').trim()).filter(Boolean)};
+}
+const oneLine = s => String(s || '').replace(/\s+/g, ' ').trim();
+function buildDesc(f) {
+  const lines = [];
+  if (oneLine(f.status)) lines.push('Status: ' + oneLine(f.status));
+  STD.forEach(k => { if (oneLine(f.vals[k])) lines.push(k + ': ' + oneLine(f.vals[k])); });
+  f.custom.forEach(([k, v]) => { if (oneLine(k) && oneLine(v)) lines.push(oneLine(k).replace(/:/g, '') + ': ' + oneLine(v)); });
+  const body = f.body.replace(/\r\n?/g, '\n').trim().split(/\n\s*\n/).map(p => p.replace(/\s*\n\s*/g, ' ').trim()).filter(Boolean).join('\n\n');
+  return (lines.length ? lines.join('\n') + '\n\n' : '') + body + '\n';
+}
+function cleanTitle(t) {
+  return String(t || '').replace(/[\/\\:*?"<>|]/g, ' ').replace(/\s+/g, ' ').trim().replace(/^[._\s]+/, '').slice(0, 80);
+}
+
+/* ---------------------------------------------------------------- photos: resize on the phone */
+async function resizePhoto(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((res, rej) => {
+      const i = new Image();
+      i.onload = () => res(i);
+      i.onerror = () => rej(new Error('Could not read the photo "' + file.name + '".'));
+      i.src = url;
+    });
+    let w = img.naturalWidth, h = img.naturalHeight;
+    const k = Math.min(1, MAX_SIDE / Math.max(w, h));
+    w = Math.max(1, Math.round(w * k)); h = Math.max(1, Math.round(h * k));
+    const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+    const cx = cv.getContext('2d');
+    cx.fillStyle = '#fff'; cx.fillRect(0, 0, w, h);
+    cx.drawImage(img, 0, 0, w, h);
+    const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', QUALITY));
+    if (!blob) throw new Error('Could not resize the photo "' + file.name + '".');
+    const b64 = await new Promise((res, rej) => {
+      const fr = new FileReader();
+      fr.onload = () => res(String(fr.result).split(',')[1]);
+      fr.onerror = () => rej(new Error('Could not read the resized photo.'));
+      fr.readAsDataURL(blob);
+    });
+    return {b64, preview: URL.createObjectURL(blob), w, h, bytes: blob.size};
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+/* ---------------------------------------------------------------- views */
+function viewSetup(msg) {
+  setTitle('Site admin', false);
+  const repo = state.repo || guessRepo();
+  app.innerHTML = `
+    <p>Sign in once on this phone to add cars, take photos and publish straight from here.</p>
+    <div class="card">
+      <ol class="steps">
+        <li>On GitHub open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Settings &rarr; Developer settings &rarr; Fine-grained tokens &rarr; Generate new token</a>.</li>
+        <li>Under <b>Repository access</b> choose <b>Only select repositories</b> and pick this site's repository.</li>
+        <li>Under <b>Permissions &rarr; Repository permissions</b> set <b>Contents</b> to <b>Read and write</b>.</li>
+        <li>Generate the token, copy it, and paste it below.</li>
+      </ol>
+    </div>
+    ${msg ? '<p style="color:var(--danger)">' + esc(msg) + '</p>' : ''}
+    <form id="setup">
+      <label>Repository <small>owner/name, for example kylew357/harpersclasssics</small>
+        <input id="f-repo" value="${esc(repo)}" autocapitalize="off" autocorrect="off" spellcheck="false" required></label>
+      <label>Access token
+        <input id="f-token" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" required></label>
+      <button class="btn primary big" type="submit">Sign in</button>
+      <p class="hint">The token is saved only in this browser. If you lose the phone, delete the token on GitHub.</p>
+    </form>`;
+  $('#setup').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    state.repo = $('#f-repo').value.trim().replace(/^https?:\/\/github\.com\//i, '').replace(/\.git$/, '').replace(/\/$/, '');
+    state.token = $('#f-token').value.trim();
+    busy('Checking your token…');
+    try {
+      const info = await api('https://api.github.com/repos/' + state.repo);
+      if (info.permissions && info.permissions.push === false) throw new Error('This token can read the repository but not change it. Give it "Contents: Read and write".');
+      state.branch = info.default_branch || 'main';
+      store.set('hc_admin', JSON.stringify({repo: state.repo, token: state.token, branch: state.branch}));
+      await refresh();
+      viewList();
+    } catch (e) {
+      state.token = '';
+      viewSetup(e.message);
+    } finally { idle(); }
+  });
+}
+
+function carCard(c) {
+  const n = c.photos.length;
+  const cover = c.photos[0];
+  const sold = c.kind === 'sold';
+  return `<div class="card car" data-key="${esc(c.key)}">
+    ${cover ? `<img class="th" loading="lazy" alt="" src="${esc(liveThumb(c, cover))}" data-alt="${esc(rawUrl(c.key + '/' + cover.name))}">` : '<div class="th"></div>'}
+    <div><div class="nm">${esc(c.name)}</div><div class="sub">${n} photo${n === 1 ? '' : 's'}</div></div>
+    <div class="acts">
+      <button class="btn sm" data-act="edit">Edit</button>
+      <button class="btn sm" data-act="${sold ? 'unsold' : 'sold'}">${sold ? 'Back for sale' : 'Mark sold'}</button>
+      <button class="btn sm danger" data-act="del">Delete</button>
+    </div></div>`;
+}
+function viewList() {
+  form = null;
+  setTitle('Inventory', false);
+  const byName = (a, b) => natcmp(a.name, b.name);
+  const sale = state.cars.filter(c => c.kind === 'cars').sort(byName);
+  const sold = state.cars.filter(c => c.kind === 'sold').sort(byName);
+  app.innerHTML = `
+    <button class="btn primary big" id="add" type="button">+ Add a car</button>
+    <h2>For sale <small>${sale.length}</small></h2>
+    ${sale.length ? sale.map(carCard).join('') : '<p class="empty">Nothing for sale yet. Tap “Add a car”.</p>'}
+    <h2>Sold <small>${sold.length}</small></h2>
+    ${sold.length ? sold.map(carCard).join('') : '<p class="empty">No sold cars.</p>'}
+    <div class="links">
+      <button class="btn" id="site-info" type="button">Edit site info (phone, hours, about)</button>
+      <a class="btn" href="../" target="_blank" rel="noopener">View live site</a>
+      <button class="btn" id="signout" type="button">Sign out</button>
+    </div>
+    <p class="hint">Changes go live about a minute after you publish.</p>`;
+  app.querySelectorAll('img[data-alt]').forEach(img => img.addEventListener('error', () => {
+    if (!img.dataset.tried) { img.dataset.tried = '1'; img.src = img.dataset.alt; } else img.style.visibility = 'hidden';
+  }));
+}
+
+async function openCar(key) {
+  let car = null, parsed = {specs: [], paras: []};
+  if (key) {
+    car = state.cars.find(c => c.key === key);
+    busy('Loading…');
+    try { if (car.desc) parsed = parseDesc(await readBlob(car.desc.sha)); }
+    catch (e) { toast(e.message, true); return; }
+    finally { idle(); }
+  }
+  form = {
+    orig: car, kind: car ? car.kind : 'cars', title: car ? car.name : '',
+    vals: {}, status: '', custom: [], body: parsed.paras.join('\n\n'),
+    photos: (car ? car.photos : []).map(p => ({id: ++uid, kind: 'old', name: p.name, sha: p.sha, url: rawUrl(car.key + '/' + p.name), remove: false})),
+    cover: null, dirty: false
+  };
+  parsed.specs.forEach(([k, v]) => {
+    const s = STD.find(x => x.toLowerCase() === k.toLowerCase());
+    if (s) form.vals[s] = v;
+    else if (k.toLowerCase() === 'status') form.status = v;
+    else form.custom.push([k, v]);
+  });
+  const oc = form.photos.find(p => stemOf(p.name).toLowerCase() === 'cover') || form.photos[0];
+  form.cover = oc ? oc.id : null;
+  renderCarForm();
+}
+
+function renderCarForm() {
+  const f = form;
+  setTitle(f.orig ? 'Edit car' : 'Add a car', true);
+  const inp = (k, label, ph, mode) => `<label>${label}<input data-v="${k}" value="${esc(f.vals[k] || '')}" placeholder="${esc(ph || '')}" ${mode ? 'inputmode="' + mode + '"' : ''} autocomplete="off"></label>`;
+  const statuses = STATUSES.includes(f.status) || !f.status ? STATUSES : STATUSES.concat([f.status]);
+  app.innerHTML = `
+    <form id="carform" autocomplete="off" novalidate>
+      <label>Title <small>Year, make and model. This becomes the car's name on the site.</small>
+        <input id="f-title" value="${esc(f.title)}" placeholder="1972 Ford F-100 Custom" autocapitalize="words"></label>
+      <div class="row2">${inp('Price', 'Price', '$18,500')}${inp('Year', 'Year', '1972', 'numeric')}</div>
+      <div class="row2">${inp('Mileage', 'Mileage', '61,400 mi')}${inp('Color', 'Color', 'Two-tone Green')}</div>
+      <div class="row2">${inp('Engine', 'Engine', '360 V8')}${inp('Transmission', 'Transmission', 'Automatic')}</div>
+      ${inp('Drivetrain', 'Drivetrain', '4x4')}
+      <label>Badge
+        <select id="f-status"><option value="">None</option>${statuses.map(s => `<option${s === f.status ? ' selected' : ''}>${esc(s)}</option>`).join('')}</select></label>
+      <label>Description <small>The first paragraph shows on the gallery tile. Leave a blank line between paragraphs.</small>
+        <textarea id="f-body" placeholder="Tell people about the car…">${esc(f.body)}</textarea></label>
+      <h2>Other details</h2>
+      <div id="custom"></div>
+      <button class="btn sm" type="button" id="add-kv">+ Add a detail (VIN, stock #…)</button>
+      <h2>Photos</h2>
+      <div class="pgrid" id="photos"></div>
+      <label class="pick">+ Add photos<input id="f-files" type="file" accept="image/*" multiple></label>
+      <p class="hint">Photos are resized on your phone before upload. Tap ★ to choose the cover photo, × to remove one.</p>
+    </form>
+    <div class="dock"><div class="dock-in"><button class="btn primary big" id="publish" type="button">${f.orig ? 'Save changes' : 'Publish to site'}</button></div></div>`;
+  renderCustom();
+  renderPhotos();
+}
+function renderCustom() {
+  $('#custom').innerHTML = form.custom.map((kv, i) => `<div class="kv" data-i="${i}">
+    <input data-ck placeholder="Name" value="${esc(kv[0])}" autocapitalize="words">
+    <input data-cv placeholder="Value" value="${esc(kv[1])}">
+    <button type="button" class="icon" data-act="rm-kv" aria-label="Remove">&times;</button></div>`).join('');
+}
+function renderPhotos() {
+  $('#photos').innerHTML = form.photos.map(p => `<div class="ph${p.id === form.cover && !p.remove ? ' cover' : ''}${p.remove ? ' gone' : ''}" data-id="${p.id}">
+    <img alt="" src="${esc(p.preview || p.url)}">
+    <button type="button" class="x" data-act="rm-ph" aria-label="${p.remove ? 'Undo remove' : 'Remove'}">${p.remove ? '&#8634;' : '&times;'}</button>
+    ${p.remove ? '' : '<button type="button" class="star" data-act="cover" aria-label="Make cover">&#9733;</button>'}</div>`).join('');
+}
+
+async function addPhotos(fileList) {
+  const files = Array.from(fileList);
+  for (let i = 0; i < files.length; i++) {
+    busy('Preparing photo ' + (i + 1) + ' of ' + files.length + '…');
+    try {
+      const r = await resizePhoto(files[i]);
+      const p = {id: ++uid, kind: 'new', b64: r.b64, preview: r.preview, remove: false};
+      form.photos.push(p);
+      if (form.cover == null) form.cover = p.id;
+      form.dirty = true;
+    } catch (e) { toast(e.message, true); }
+  }
+  idle();
+  renderPhotos();
+}
+
+async function publish() {
+  const f = form;
+  const title = cleanTitle(f.title);
+  if (!title) { toast('Enter a title first.', true); $('#f-title').focus(); return; }
+  for (const [k] of f.custom) {
+    if (oneLine(k) && !/^[A-Za-z][A-Za-z0-9 \/]{0,24}$/.test(oneLine(k).replace(/:/g, ''))) {
+      toast('Detail names must start with a letter and be under 25 characters: "' + k + '"', true); return;
+    }
+  }
+  busy('Checking the latest inventory…');
+  try {
+    await refresh();
+    const newFolder = f.kind + '/' + title;
+    const oldFolder = f.orig ? f.orig.key : null;
+    const orig = oldFolder ? state.cars.find(c => c.key === oldFolder) : null;
+    if (oldFolder && !orig) throw new Error('That car was changed or removed somewhere else. Go back and reopen it.');
+    if (newFolder !== oldFolder && state.cars.some(c => c.key.toLowerCase() === newFolder.toLowerCase()))
+      throw new Error('A car called "' + title + '" already exists. Use a different title.');
+
+    // final photo names
+    const kept = f.photos.filter(p => !p.remove);
+    const cover = kept.find(p => p.id === f.cover) || kept[0] || null;
+    const names = new Map();
+    let maxNum = 1;
+    kept.forEach(p => { if (p.kind === 'old') { const m = /^(\d+)/.exec(p.name); if (m) maxNum = Math.max(maxNum, parseInt(m[1], 10)); } });
+    const num = () => String(++maxNum).padStart(2, '0');
+    if (cover) names.set(cover.id, 'cover' + (cover.kind === 'old' ? extOf(cover.name) : '.jpg'));
+    kept.forEach(p => {
+      if (names.has(p.id)) return;
+      if (p.kind === 'old') names.set(p.id, stemOf(p.name).toLowerCase() === 'cover' ? num() + extOf(p.name) : p.name);
+      else names.set(p.id, num() + '.jpg');
+    });
+
+    // everything the folder should contain afterwards
+    const finalFiles = new Map();
+    const descName = orig && orig.desc ? orig.desc.name : 'description.txt';
+    finalFiles.set(newFolder + '/' + descName, {text: buildDesc(f)});
+    kept.forEach(p => finalFiles.set(newFolder + '/' + names.get(p.id), p.kind === 'old' ? {sha: p.sha} : {b64: p.b64}));
+    const oldSha = new Map();
+    if (orig) {
+      orig.files.forEach(file => {
+        oldSha.set(oldFolder + '/' + file.name, file.sha);
+        if (!isImg(file.name) && !(orig.desc && file.name === orig.desc.name)) finalFiles.set(newFolder + '/' + file.name, {sha: file.sha});
+      });
+    }
+    const changes = [];
+    finalFiles.forEach((v, path) => { if (v.sha && oldSha.get(path) === v.sha) return; changes.push(Object.assign({path}, v)); });
+    oldSha.forEach((sha, path) => { if (!finalFiles.has(path)) changes.push({path, del: true}); });
+
+    busy('Uploading…');
+    await commit(changes, (orig ? 'Update ' : 'Add ') + title, (d, t) => busy('Uploading ' + d + ' of ' + t + '…'));
+    await refresh();
+    viewList();
+    toast('Published. The live site updates in about a minute.');
+  } catch (e) {
+    toast(e.message, true);
+  } finally { idle(); }
+}
+
+async function moveFolder(key, toKind) {
+  const c = state.cars.find(x => x.key === key);
+  const dest = toKind + '/' + c.name;
+  busy('Updating…');
+  try {
+    await refresh();
+    if (state.cars.some(x => x.key.toLowerCase() === dest.toLowerCase())) throw new Error('"' + c.name + '" already exists there.');
+    const changes = [];
+    c.files.forEach(f => { changes.push({path: dest + '/' + f.name, sha: f.sha}); changes.push({path: key + '/' + f.name, del: true}); });
+    await commit(changes, (toKind === 'sold' ? 'Mark sold: ' : 'Back for sale: ') + c.name);
+    await refresh();
+    viewList();
+    toast(toKind === 'sold' ? 'Marked as sold. Live in about a minute.' : 'Moved back to for sale. Live in about a minute.');
+  } catch (e) { toast(e.message, true); } finally { idle(); }
+}
+async function deleteCar(key) {
+  const c = state.cars.find(x => x.key === key);
+  if (!confirm('Delete "' + c.name + '" and all its photos from the site? This cannot be undone from here.')) return;
+  busy('Deleting…');
+  try {
+    await refresh();
+    await commit(c.files.map(f => ({path: key + '/' + f.name, del: true})), 'Remove ' + c.name);
+    await refresh();
+    viewList();
+    toast('Deleted. The site updates in about a minute.');
+  } catch (e) { toast(e.message, true); } finally { idle(); }
+}
+
+async function viewSite() {
+  busy('Loading…');
+  let site = {}, about = '';
+  try {
+    await refresh();
+    const sj = state.entries.find(e => e.path === 'site.json'), ab = state.entries.find(e => e.path === 'about.txt');
+    if (sj) site = JSON.parse(await readBlob(sj.sha));
+    if (ab) about = await readBlob(ab.sha);
+  } catch (e) { toast(e.message, true); return; } finally { idle(); }
+  setTitle('Site info', true);
+  const f = (k, label, ph) => `<label>${label}<input data-s="${k}" value="${esc(site[k] || '')}" placeholder="${esc(ph || '')}"></label>`;
+  app.innerHTML = `
+    <form id="siteform" autocomplete="off" novalidate>
+      ${f('name', 'Business name')}${f('headline', 'Home page headline')}${f('subheadline', 'Home page sub-headline')}${f('tagline', 'Short tagline')}
+      <div class="row2">${f('phone', 'Phone', '(919) 555-0123')}${f('since', 'Since (year)', '2005')}</div>
+      ${f('email', 'Email')}${f('address', 'Address')}
+      <label>Hours <small>One line each</small><textarea data-s="hours" style="min-height:110px">${esc((site.hours || []).join('\n'))}</textarea></label>
+      <label>About page text <small>Blank line between paragraphs</small><textarea id="s-about" style="min-height:220px">${esc(about)}</textarea></label>
+    </form>
+    <div class="dock"><div class="dock-in"><button class="btn primary big" id="save-site" type="button">Save changes</button></div></div>`;
+  $('#save-site').addEventListener('click', async () => {
+    const out = Object.assign({}, site);
+    app.querySelectorAll('[data-s]').forEach(el => {
+      const k = el.dataset.s;
+      out[k] = k === 'hours' ? el.value.split('\n').map(s => s.trim()).filter(Boolean) : el.value.trim();
+    });
+    const changes = [{path: 'site.json', text: JSON.stringify(out, null, 2) + '\n'}];
+    if ($('#s-about').value.trim() !== about.trim()) changes.push({path: 'about.txt', text: $('#s-about').value.trim() + '\n'});
+    busy('Saving…');
+    try { await commit(changes, 'Update site info'); await refresh(); viewList(); toast('Saved. The live site updates in about a minute.'); }
+    catch (e) { toast(e.message, true); } finally { idle(); }
+  });
+}
+
+/* ---------------------------------------------------------------- events */
+app.addEventListener('click', ev => {
+  const t = ev.target.closest('button');
+  if (!t) return;
+  const act = t.dataset.act;
+  if (t.id === 'add') return openCar(null);
+  if (t.id === 'site-info') return viewSite();
+  if (t.id === 'signout') { store.del('hc_admin'); state.token = ''; return viewSetup(); }
+  if (t.id === 'publish') return publish();
+  if (t.id === 'add-kv') { form.custom.push(['', '']); form.dirty = true; renderCustom(); const k = app.querySelectorAll('[data-ck]'); k[k.length - 1].focus(); return; }
+  const carEl = t.closest('.car');
+  if (carEl) {
+    const key = carEl.dataset.key;
+    if (act === 'edit') return openCar(key);
+    if (act === 'sold') return moveFolder(key, 'sold');
+    if (act === 'unsold') return moveFolder(key, 'cars');
+    if (act === 'del') return deleteCar(key);
+  }
+  if (act === 'rm-kv') { form.custom.splice(+t.closest('.kv').dataset.i, 1); form.dirty = true; return renderCustom(); }
+  const ph = t.closest('.ph');
+  if (ph && form) {
+    const p = form.photos.find(x => x.id === +ph.dataset.id);
+    form.dirty = true;
+    if (act === 'rm-ph') {
+      if (p.kind === 'new') form.photos = form.photos.filter(x => x !== p); else p.remove = !p.remove;
+      if (form.cover === p.id && (p.remove || p.kind === 'new')) { const n = form.photos.find(x => !x.remove); form.cover = n ? n.id : null; }
+    } else if (act === 'cover') form.cover = p.id;
+    renderPhotos();
+  }
+});
+app.addEventListener('input', ev => {
+  if (!form) return;
+  const el = ev.target; form.dirty = true;
+  if (el.id === 'f-title') form.title = el.value;
+  else if (el.id === 'f-body') form.body = el.value;
+  else if (el.dataset.v) form.vals[el.dataset.v] = el.value;
+  else if (el.dataset.ck !== undefined) form.custom[+el.closest('.kv').dataset.i][0] = el.value;
+  else if (el.dataset.cv !== undefined) form.custom[+el.closest('.kv').dataset.i][1] = el.value;
+});
+app.addEventListener('change', ev => {
+  const el = ev.target;
+  if (!form) return;
+  if (el.id === 'f-status') { form.status = el.value; form.dirty = true; }
+  if (el.id === 'f-files') { addPhotos(el.files).then(() => { el.value = ''; }); }
+});
+$('#back').addEventListener('click', () => {
+  if (form && form.dirty && !confirm('Discard your changes?')) return;
+  viewList();
+});
+
+/* ---------------------------------------------------------------- start */
+(async function start() {
+  let saved = null;
+  try { saved = JSON.parse(store.get('hc_admin') || 'null'); } catch (e) {}
+  if (saved && saved.token && saved.repo) {
+    Object.assign(state, {repo: saved.repo, token: saved.token, branch: saved.branch || 'main'});
+    busy('Loading inventory…');
+    try { await refresh(); viewList(); }
+    catch (e) { state.token = ''; viewSetup(e.message); }
+    finally { idle(); }
+  } else {
+    viewSetup();
+  }
+})();
+})();
+</script>
+</body>
+</html>

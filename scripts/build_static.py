@@ -16,7 +16,21 @@ from urllib.parse import quote
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, 'dist')
-IMAGE_EXT = {'.jpg', '.jpeg', '.png', '.webp', '.gif', '.avif', '.svg'}
+RASTER_EXT = {'.jpg', '.jpeg', '.png', '.webp', '.avif', '.heic', '.heif'}
+PASSTHRU_EXT = {'.gif', '.svg'}
+IMAGE_EXT = RASTER_EXT | PASSTHRU_EXT
+MAX_SIDE = 1600     # longest edge of the full-size photo
+THUMB_SIDE = 720    # longest edge of the gallery-tile photo
+
+try:  # optional: resizing needs Pillow (the GitHub workflow installs it)
+    from PIL import Image, ImageOps
+    try:
+        import pillow_heif  # lets Pillow read iPhone HEIC photos
+        pillow_heif.register_heif_opener()
+    except Exception:
+        pass
+except Exception:
+    Image = None
 SPEC_RE = re.compile(r'^([A-Za-z][A-Za-z0-9 /]{0,24}):\s*(.+)$')
 
 NAV = [
@@ -165,7 +179,7 @@ def load_car(kind, name, slug):
         status = 'Sold'
 
     return {
-        'kind': kind, 'name': name, 'slug': slug, 'images': images,
+        'kind': kind, 'name': name, 'slug': slug, 'images': images, 'photos': [],
         'specs': specs, 'paragraphs': paragraphs, 'short': short,
         'price': spec_get(specs, 'price'), 'status': status,
         'time': folder_time(rel),
@@ -191,8 +205,70 @@ def scan(kind):
     return cars
 
 
-def img_url(car, filename):
-    return url_path(car['kind'], car['name'], filename)
+def img_url(car, photo):
+    return url_path(car['kind'], car['name'], photo['out'])
+
+
+def thumb_url(car, photo):
+    if photo['thumb']:
+        return url_path('thumbs', car['kind'], car['name'], photo['out'])
+    return img_url(car, photo)
+
+
+def fit(im, side):
+    w, h_ = im.size
+    if max(w, h_) <= side:
+        return im
+    scale = side / float(max(w, h_))
+    return im.resize((max(1, round(w * scale)), max(1, round(h_ * scale))), Image.LANCZOS)
+
+
+def process_photos(car):
+    """Copy/resize this car's photos into dist/ and fill car['photos']."""
+    src_dir = os.path.join(ROOT, car['kind'], car['name'])
+    dest = os.path.join(OUT, car['kind'], car['name'])
+    tdest = os.path.join(OUT, 'thumbs', car['kind'], car['name'])
+    os.makedirs(dest, exist_ok=True)
+    used = set()
+    for f in car['images']:
+        stem, ext = os.path.splitext(f)
+        ext = ext.lower()
+        src = os.path.join(src_dir, f)
+        keep_name = ext in PASSTHRU_EXT or ext in ('.jpg', '.jpeg')
+        out = f if keep_name else stem + '.jpg'
+        if out in used:
+            out = '%s-%s.jpg' % (stem, ext[1:])
+        photo = {'src': f, 'out': out, 'thumb': False}
+        try:
+            if ext in PASSTHRU_EXT or Image is None:
+                if ext not in PASSTHRU_EXT and ext not in ('.jpg', '.jpeg', '.png', '.webp', '.avif'):
+                    raise RuntimeError('needs Pillow to convert %s files' % ext)
+                out = f  # without Pillow, raster files are copied as they are
+                photo['out'] = out
+                shutil.copy2(src, os.path.join(dest, out))
+            else:
+                with Image.open(src) as im:
+                    im = ImageOps.exif_transpose(im)
+                    if im.mode in ('RGBA', 'LA', 'P'):
+                        im = im.convert('RGBA')
+                        bg = Image.new('RGB', im.size, (255, 255, 255))
+                        bg.paste(im, mask=im.split()[-1])
+                        im = bg
+                    else:
+                        im = im.convert('RGB')
+                    big = fit(im, MAX_SIDE)
+                    if big is im and ext in ('.jpg', '.jpeg') and os.path.getsize(src) < 600 * 1024:
+                        shutil.copy2(src, os.path.join(dest, out))   # already small, keep as is
+                    else:
+                        big.save(os.path.join(dest, out), 'JPEG', quality=82, optimize=True, progressive=True)
+                    os.makedirs(tdest, exist_ok=True)
+                    fit(im, THUMB_SIDE).save(os.path.join(tdest, out), 'JPEG', quality=78, optimize=True)
+                    photo['thumb'] = True
+        except Exception as e:
+            print('WARNING: skipped photo %s/%s (%s)' % (car['name'], f, e))
+            continue
+        used.add(photo['out'])
+        car['photos'].append(photo)
 
 
 # ---------------------------------------------------------------- templates
@@ -274,7 +350,7 @@ def page(title, active, body, desc=None):
 
 
 def render_card(car):
-    cover = car['images'][0] if car['images'] else None
+    cover = car['photos'][0] if car['photos'] else None
     is_sold = car['kind'] == 'sold'
 
     chips = []
@@ -284,7 +360,7 @@ def render_card(car):
     search = ' '.join([car['name'], car['short']] + [v for _, v in car['specs']]).lower()
 
     if cover:
-        thumb = '<img loading="lazy" src="%s" alt="%s">' % (h(img_url(car, cover)), h(car['name']))
+        thumb = '<img loading="lazy" src="%s" alt="%s">' % (h(thumb_url(car, cover)), h(car['name']))
     else:
         thumb = '<div class="no-photo">Photo coming soon</div>'
     badge = ''
@@ -422,7 +498,8 @@ def sold_page(sold):
 def car_page(car, stock):
     s = SITE
     is_sold = car['kind'] == 'sold'
-    urls = [img_url(car, f) for f in car['images']]
+    urls = [img_url(car, p) for p in car['photos']]
+    tiny = [thumb_url(car, p) for p in car['photos']]
     specs = [(k, v) for k, v in car['specs'] if k.lower() not in ('price', 'status')]
     others = [c for c in stock if c['name'] != car['name']][:3]
 
@@ -435,7 +512,7 @@ def car_page(car, stock):
         if len(urls) > 1:
             btns = ''.join(
                 '<button type="button" class="%s" aria-label="Photo %d"><img loading="lazy" src="%s" alt=""></button>'
-                % ('active' if i == 0 else '', i + 1, h(u)) for i, u in enumerate(urls))
+                % ('active' if i == 0 else '', i + 1, h(u)) for i, u in enumerate(tiny))
             thumbs = '\n        <div class="thumbs">%s</div>' % btns
         gallery = f'''<div class="gallery" data-gallery data-images="{h(json.dumps(urls))}">
         <div class="main-photo"><img src="{h(urls[0])}" alt="{h(car['name'])}"></div>{thumbs}
@@ -566,12 +643,15 @@ def build():
 
     shutil.copytree(os.path.join(ROOT, 'assets'), os.path.join(OUT, 'assets'))
     write('.nojekyll', '')
+    admin = os.path.join(ROOT, 'admin')
+    if os.path.isdir(admin):
+        shutil.copytree(admin, os.path.join(OUT, 'admin'))
+
+    if Image is None:
+        print('NOTE: Pillow is not installed, so photos are copied without resizing.')
 
     for car in stock + sold:
-        dest = os.path.join(OUT, car['kind'], car['name'])
-        os.makedirs(dest, exist_ok=True)
-        for f in car['images']:
-            shutil.copy2(os.path.join(ROOT, car['kind'], car['name'], f), os.path.join(dest, f))
+        process_photos(car)
         write(car['file'], page(car['name'], 'sold' if car['kind'] == 'sold' else 'inventory',
                                 car_page(car, stock), car['short']))
 
@@ -586,9 +666,9 @@ def build():
 
     print('Built %d car(s) for sale and %d sold -> dist/' % (len(stock), len(sold)))
     for c in stock:
-        print('  for sale: %s (%d photo%s)' % (c['name'], len(c['images']), '' if len(c['images']) == 1 else 's'))
+        print('  for sale: %s (%d photo%s)' % (c['name'], len(c['photos']), '' if len(c['photos']) == 1 else 's'))
     for c in sold:
-        print('  sold:     %s (%d photo%s)' % (c['name'], len(c['images']), '' if len(c['images']) == 1 else 's'))
+        print('  sold:     %s (%d photo%s)' % (c['name'], len(c['photos']), '' if len(c['photos']) == 1 else 's'))
 
 
 if __name__ == '__main__':
