@@ -51,6 +51,13 @@ def natkey(s):
     return [int(t) if t.isdigit() else t.lower() for t in re.split(r'(\d+)', s)]
 
 
+def asset_v(name):
+    """Short content hash for assets/<name>, so browsers fetch a fresh copy whenever it changes."""
+    import hashlib
+    with open(os.path.join(ROOT, 'assets', name), 'rb') as f:
+        return hashlib.sha1(f.read()).hexdigest()[:8]
+
+
 def slugify(s):
     return re.sub(r'[^a-z0-9]+', '-', s.lower()).strip('-') or 'car'
 
@@ -309,7 +316,7 @@ def page(title, active, body, desc=None):
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/style.css?v={asset_v('style.css')}">
 </head>
 <body>
 <header class="site-header">
@@ -343,7 +350,7 @@ def page(title, active, body, desc=None):
   </div>
   <div class="wrap footer-bottom">&copy; {datetime.date.today().year} {h(s['name'])}</div>
 </footer>
-<script src="assets/app.js"></script>
+<script src="assets/app.js?v={asset_v('app.js')}"></script>
 </body>
 </html>
 '''

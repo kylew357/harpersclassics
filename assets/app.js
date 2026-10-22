@@ -112,6 +112,7 @@
   box.addEventListener('touchmove', function (e) {
     if (!g) return;
     if (e.touches.length !== 1) { g = null; snap(); return; }
+    e.preventDefault();   // iOS Safari otherwise scrolls the page behind and cancels the swipe
     g.dx = e.touches[0].clientX - g.x;
     g.dy = e.touches[0].clientY - g.y;
     if (!g.axis) {
@@ -124,10 +125,10 @@
       lbImg.style.transform = 'translateY(' + g.dy + 'px)';
       box.style.background = 'rgba(10, 9, 8, ' + Math.max(0.35, 0.95 - g.dy / 600) + ')';
     }
-  }, {passive: true});
-  box.addEventListener('touchend', function () {
+  }, {passive: false});
+  function finish(cancelled) {
     var s = g; g = null;
-    if (!s || !s.axis) return;
+    if (!s || !s.axis) { if (cancelled) snap(); return; }
     var speed = Math.abs(s.dx) / Math.max(1, Date.now() - s.t);
     if (s.axis === 'x' && many && (Math.abs(s.dx) > 60 || (speed > 0.4 && Math.abs(s.dx) > 25))) {
       var dir = s.dx < 0 ? 1 : -1;           // swipe left shows the next photo
@@ -145,11 +146,12 @@
         lbImg.style.opacity = '1';
         setTimeout(function () { animating = false; }, 200);
       }, 160);
-    } else if (s.axis === 'y' && s.dy > 100) {
+    } else if (!cancelled && s.axis === 'y' && s.dy > 100) {
       closeBox();
     } else {
       snap();
     }
-  });
-  box.addEventListener('touchcancel', function () { g = null; snap(); });
+  }
+  box.addEventListener('touchend', function () { finish(false); });
+  box.addEventListener('touchcancel', function () { finish(true); });
 })();
