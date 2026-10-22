@@ -1,5 +1,5 @@
 Status: Just In
-Price: 45,000
+Price: $45,000
 Year: 1967
 Mileage: 81.000
 Color: Red
