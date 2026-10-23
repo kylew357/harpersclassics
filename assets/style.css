@@ -7,8 +7,8 @@
   --accent: #b4381f;
   --accent-dark: #8f2b17;
   --radius: 16px;
-  --serif: "Fraunces", Georgia, "Times New Roman", serif;
-  --sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --serif: "Roboto", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;   /* headings, prices, brand */
+  --sans: "Roboto", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;    /* body text */
 }
 
 * { box-sizing: border-box; }
