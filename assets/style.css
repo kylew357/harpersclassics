@@ -216,9 +216,11 @@ p { margin: 0 0 1em; }
 .more-cars h2 { margin-bottom: 28px; }
 
 /* ---------- lightbox ---------- */
-.lightbox { position: fixed; inset: 0; z-index: 100; background: rgba(10, 9, 8, .95); display: flex; align-items: center; justify-content: center; }
+.lightbox { position: fixed; inset: 0; z-index: 100; background: rgba(10, 9, 8, .98); display: flex; align-items: center; justify-content: center; }
 .lightbox { touch-action: pinch-zoom; overscroll-behavior: contain; }
-.lightbox img { max-width: 92vw; max-height: 88vh; object-fit: contain; border-radius: 6px; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; will-change: transform; }
+.lb-stage { position: absolute; inset: 0; }
+.lb-slide { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; will-change: transform; backface-visibility: hidden; }
+.lightbox img { position: absolute; inset: 0; margin: auto; width: 92vw; height: 88vh; object-fit: contain; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .lightbox button { position: absolute; background: rgba(255, 255, 255, .12); color: #fff; border: 0; width: 48px; height: 48px; border-radius: 50%; font-size: 1.8rem; line-height: 1; cursor: pointer; }
 .lightbox button:hover { background: rgba(255, 255, 255, .25); }
 .lb-close { top: calc(16px + env(safe-area-inset-top)); right: 16px; }
