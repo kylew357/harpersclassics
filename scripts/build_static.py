@@ -328,7 +328,7 @@ def page(title, active, body, desc=None):
 <body>
 <header class="site-header">
   <div class="wrap header-inner">
-    <a class="brand" href="index.html">{h(s['name'])}</a>
+    <a class="brand" href="index.html" aria-label="{h(s['name'])}, home"><img class="logo" src="assets/logo.webp?v={asset_v('logo.webp')}" alt="{h(s['name'])}"></a>
     <button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button>
     <nav class="nav" aria-label="Main">
       <ul>
@@ -410,7 +410,7 @@ def home_page(stock, sold):
     about = about_paragraphs()
     hero_style = ''
     if os.path.isfile(os.path.join(ROOT, 'assets', 'hero.jpg')):
-        hero_style = ' style="--hero:url(\'assets/hero.jpg\')"'
+        hero_style = ' style="--hero:url(\'hero.jpg\')"'  # resolved relative to assets/style.css
     eyebrow = '<p class="eyebrow">Since %s</p>' % h(s['since']) if s['since'] else ''
     sub = '<p class="hero-sub">%s</p>' % h(s['subheadline']) if s['subheadline'] else ''
     years = ''
