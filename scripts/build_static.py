@@ -32,6 +32,7 @@ try:  # optional: resizing needs Pillow (the GitHub workflow installs it)
 except Exception:
     Image = None
 SPEC_RE = re.compile(r'^([A-Za-z][A-Za-z0-9 /]{0,24}):\s*(.+)$')
+BAT_KEY = 'bring a trailer url'   # description.txt line holding the car's Bring a Trailer listing link
 
 NAV = [
     ('home', 'index.html', 'Home'),
@@ -102,6 +103,12 @@ def load_site():
 
 
 SITE = load_site()
+
+
+def safe_url(u):
+    """Only plain http(s) links become buttons (never javascript: or other schemes)."""
+    u = (u or '').strip()
+    return u if re.match(r'^https?://[^\s<>"\']+$', u, re.I) else ''
 
 
 def spec_get(specs, key):
@@ -362,9 +369,9 @@ def render_card(car):
 
     chips = []
     for k, v in car['specs']:
-        if k.lower() not in ('price', 'status', 'year') and len(chips) < 2:
+        if k.lower() not in ('price', 'status', 'year', BAT_KEY) and len(chips) < 2:
             chips.append(v)
-    search = ' '.join([car['name'], car['short']] + [v for _, v in car['specs']]).lower()
+    search = ' '.join([car['name'], car['short']] + [v for k, v in car['specs'] if k.lower() != BAT_KEY]).lower()
 
     if cover:
         thumb = '<img loading="lazy" src="%s" alt="%s">' % (h(thumb_url(car, cover)), h(car['name']))
@@ -507,7 +514,8 @@ def car_page(car, stock):
     is_sold = car['kind'] == 'sold'
     urls = [img_url(car, p) for p in car['photos']]
     tiny = [thumb_url(car, p) for p in car['photos']]
-    specs = [(k, v) for k, v in car['specs'] if k.lower() not in ('price', 'status')]
+    specs = [(k, v) for k, v in car['specs'] if k.lower() not in ('price', 'status', BAT_KEY)]
+    bat = safe_url(spec_get(car['specs'], BAT_KEY))
     others = [c for c in stock if c['name'] != car['name']][:3]
 
     badge = ''
@@ -537,13 +545,16 @@ def car_page(car, stock):
         rows = ''.join('<tr><th>%s</th><td>%s</td></tr>' % (h(k), h(v)) for k, v in specs)
         table = '<table class="specs">%s</table>' % rows
 
+    bat_btn = ('<a class="btn %%s" href="%s" target="_blank" rel="noopener noreferrer">View on Bring a Trailer &rarr;</a>' % h(bat)) if bat else ''
     if is_sold:
         actions = '<p class="muted">This car has been sold. <a href="inventory.html">See what\'s available now.</a></p>'
+        if bat:
+            actions += '\n      <div class="panel-actions">%s</div>' % (bat_btn % 'btn-outline')
     else:
-        btns = ''
+        btns = bat_btn % 'btn-primary' if bat else ''
         if s['email']:
             subject = quote('Inquiry: ' + car['name'], safe='')
-            btns += '<a class="btn btn-primary" href="mailto:%s?subject=%s">Inquire about this car</a>' % (h(s['email']), subject)
+            btns += '<a class="btn %s" href="mailto:%s?subject=%s">Inquire about this car</a>' % ('btn-outline' if bat else 'btn-primary', h(s['email']), subject)
         if s['phone']:
             btns += '<a class="btn btn-outline" href="%s">Call %s</a>' % (h(phone_href(s['phone'])), h(s['phone']))
         actions = '<div class="panel-actions">%s</div>' % btns

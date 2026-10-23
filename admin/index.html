@@ -109,7 +109,9 @@ const IMG_EXT = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.avif', '.svg', '.he
 const isImg = n => IMG_EXT.includes(extOf(n));
 const MAX_SIDE = 1600, QUALITY = 0.82;
 const STD = ['Price', 'Year', 'Mileage', 'Color', 'Engine', 'Transmission', 'Drivetrain'];
-const STATUSES = ['Just In', 'Sale Pending', 'Price Reduced'];
+const BAT = 'Bring a Trailer';                 // Badge choice that adds a link to the car's Bring a Trailer listing
+const BAT_KEY = 'Bring a Trailer URL';         // the description.txt line that stores that link
+const STATUSES = ['Just In', 'Sale Pending', 'Price Reduced', BAT];
 const SPEC_RE = /^([A-Za-z][A-Za-z0-9 \/]{0,24}):\s*(.+)$/;
 
 const store = {
@@ -327,10 +329,21 @@ const oneLine = s => String(s || '').replace(/\s+/g, ' ').trim();
 function buildDesc(f) {
   const lines = [];
   if (oneLine(f.status)) lines.push('Status: ' + oneLine(f.status));
+  if (oneLine(f.batUrl) && (oneLine(f.status) === BAT || f.batKeep)) lines.push(BAT_KEY + ': ' + oneLine(f.batUrl));
   STD.forEach(k => { if (oneLine(f.vals[k])) lines.push(k + ': ' + oneLine(f.vals[k])); });
   f.custom.forEach(([k, v]) => { if (oneLine(k) && oneLine(v)) lines.push(oneLine(k).replace(/:/g, '') + ': ' + oneLine(v)); });
   const body = f.body.replace(/\r\n?/g, '\n').trim().split(/\n\s*\n/).map(p => p.replace(/\s*\n\s*/g, ' ').trim()).filter(Boolean).join('\n\n');
   return (lines.length ? lines.join('\n') + '\n\n' : '') + body + '\n';
+}
+// "bringatrailer.com/listing/x" -> "https://bringatrailer.com/listing/x"; returns '' if it is not a usable web link
+function normalizeUrl(u) {
+  u = oneLine(u);
+  if (!u) return '';
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(u)) u = 'https://' + u.replace(/^\/+/, '');
+  try {
+    const x = new URL(u);
+    return (x.protocol === 'https:' || x.protocol === 'http:') && /\./.test(x.hostname) ? x.href : '';
+  } catch (e) { return ''; }
 }
 function cleanTitle(t) {
   return String(t || '').replace(/[\/\\:*?"<>|]/g, ' ').replace(/\s+/g, ' ').trim().replace(/^[._\s]+/, '').slice(0, 80);
@@ -465,7 +478,7 @@ async function openCar(key) {
   }
   form = {
     orig: car, kind: car ? car.kind : 'cars', title: car ? car.title : '', prefix: car ? car.prefix : '',
-    vals: {}, status: '', custom: [], body: parsed.paras.join('\n\n'),
+    vals: {}, status: '', batUrl: '', batKeep: false, custom: [], body: parsed.paras.join('\n\n'),
     photos: (car ? car.photos : []).map(p => ({id: ++uid, kind: 'old', name: p.name, sha: p.sha, url: rawUrl(car.key + '/' + p.name), remove: false})),
     cover: null, dirty: false
   };
@@ -473,8 +486,11 @@ async function openCar(key) {
     const s = STD.find(x => x.toLowerCase() === k.toLowerCase());
     if (s) form.vals[s] = v;
     else if (k.toLowerCase() === 'status') form.status = v;
+    else if (k.toLowerCase() === BAT_KEY.toLowerCase()) form.batUrl = v;
     else form.custom.push([k, v]);
   });
+  if (form.batUrl && !form.status) form.status = BAT;                       // a link with no badge: treat it as a Bring a Trailer car
+  form.batKeep = !!form.batUrl && form.status !== BAT;                      // hand-edited file with another badge: keep its link as is
   const oc = form.photos.find(p => stemOf(p.name).toLowerCase() === 'cover') || form.photos[0];
   form.cover = oc ? oc.id : null;
   renderCarForm();
@@ -495,6 +511,8 @@ function renderCarForm() {
       ${inp('Drivetrain', 'Drivetrain', '4x4')}
       <label>Badge
         <select id="f-status"><option value="">None</option>${statuses.map(s => `<option${s === f.status ? ' selected' : ''}>${esc(s)}</option>`).join('')}</select></label>
+      <label id="bat-wrap"${f.status === BAT ? '' : ' hidden'}>Bring a Trailer link <small>Paste the link to this car's listing. A “View on Bring a Trailer” button on the car's page opens it.</small>
+        <input id="f-bat" type="url" inputmode="url" value="${esc(f.batUrl)}" placeholder="https://bringatrailer.com/listing/…" autocapitalize="off" autocorrect="off" spellcheck="false"></label>
       <label>Description <small>The first paragraph shows on the gallery tile. Leave a blank line between paragraphs.</small>
         <textarea id="f-body" placeholder="Tell people about the car…">${esc(f.body)}</textarea></label>
       <h2>Other details</h2>
@@ -546,6 +564,12 @@ async function publish() {
     if (oneLine(k) && !/^[A-Za-z][A-Za-z0-9 \/]{0,24}$/.test(oneLine(k).replace(/:/g, ''))) {
       toast('Detail names must start with a letter and be under 25 characters: "' + k + '"', true); return;
     }
+  }
+  if (oneLine(f.status) === BAT) {
+    if (!oneLine(f.batUrl)) { toast('Paste the Bring a Trailer link, or choose a different badge.', true); $('#f-bat').focus(); return; }
+    const u = normalizeUrl(f.batUrl);
+    if (!u) { toast('That Bring a Trailer link doesn\'t look like a web address. It should start with https://', true); $('#f-bat').focus(); return; }
+    f.batUrl = u;
   }
   busy('Checking the latest inventory…');
   try {
@@ -715,6 +739,7 @@ app.addEventListener('input', ev => {
   const el = ev.target; form.dirty = true;
   if (el.id === 'f-title') form.title = el.value;
   else if (el.id === 'f-body') form.body = el.value;
+  else if (el.id === 'f-bat') form.batUrl = el.value;
   else if (el.dataset.v) form.vals[el.dataset.v] = el.value;
   else if (el.dataset.ck !== undefined) form.custom[+el.closest('.kv').dataset.i][0] = el.value;
   else if (el.dataset.cv !== undefined) form.custom[+el.closest('.kv').dataset.i][1] = el.value;
@@ -723,7 +748,7 @@ app.addEventListener('change', ev => {
   const el = ev.target;
   if (el.id === 'sort') { state.sort = el.value; store.set('hc_sort', state.sort); viewList(true); return; }
   if (!form) return;
-  if (el.id === 'f-status') { form.status = el.value; form.dirty = true; }
+  if (el.id === 'f-status') { form.status = el.value; form.dirty = true; const w = $('#bat-wrap'); if (w) w.hidden = form.status !== BAT; }
   if (el.id === 'f-files') { addPhotos(el.files).then(() => { el.value = ''; }); }
 });
 $('#back').addEventListener('click', () => {

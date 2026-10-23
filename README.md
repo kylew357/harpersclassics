@@ -26,6 +26,7 @@ before they upload, so there is nothing to resize by hand.
   new ones), then tap *Publish to site*.
 - **Edit a car:** tap *Edit* to change any detail, add or remove photos, or choose the cover photo (★).
 - **Mark sold:** tap *Mark sold*. It moves to the Sold page. *Back for sale* undoes it.
+- **Bring a Trailer link:** in the car form, set **Badge** to *Bring a Trailer*, then paste the link to the car's listing in the box that appears. The car's page gets a *View on Bring a Trailer* button that opens it in a new tab, and the tile shows a *Bring a Trailer* badge.
 - **Hide a car:** tap *Hide* to take a car off the website without deleting it (it appears under *Hidden* on the admin page, and *Show on site* brings it back). This is the same as putting `_` or `.` at the start of the folder name on GitHub.
 - **Sort the list:** use *Sort by* to order cars by newest or oldest added, by year, or by name. The year comes from the title (or the Year detail if the title has none), and "added" is the date the car was first put on the site.
 - **Delete:** tap *Delete* to remove a car and its photos.
@@ -67,6 +68,7 @@ More paragraphs (after a blank line) only show on the car's own page.
 - **There must be a blank line** between the `Key: Value` lines and your description text.
 - `Price` is shown on the tile and large on the car page. If you leave it out, the tile says "Call for price".
 - `Status` shows as a badge (`Just In`, `Sale Pending`, ...). Cars in `sold/` get "Sold" automatically.
+- `Bring a Trailer URL: https://bringatrailer.com/listing/...` adds a *View on Bring a Trailer* button to the car's page (the admin page writes this line for you; it is not shown in the details table).
 - The first two other details (like Mileage, Engine) show as small chips on the tile.
 
 ## Photos
