@@ -422,7 +422,8 @@ def home_page(stock, sold):
 
     return f'''<section class="hero"{hero_style}>
   <div class="wrap hero-inner">
-    <h1 class="hero-logo"><img src="assets/logo-white.webp?v={asset_v('logo-white.webp')}" alt="{h(s['headline'])}"></h1>
+    {eyebrow}
+    <h1>{h(s['headline'])}</h1>
     {sub}
     <div class="hero-actions">
       <a class="btn btn-primary" href="inventory.html">View inventory</a>
