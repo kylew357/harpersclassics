@@ -1,5 +1,4 @@
 Status: Just In
-Price: $25,000
 Year: 2002
 Mileage: 75,000
 Color: Green
