@@ -612,7 +612,13 @@ def about_page():
     eyebrow = 'Since ' + h(s['since']) if s['since'] else 'Our story'
     photo = ''
     if os.path.isfile(os.path.join(ROOT, 'assets', 'about.jpg')):
-        photo = '\n    <div class="about-photo"><img src="assets/about.jpg" alt=""></div>'
+        side = ''
+        side_path = os.path.join(ROOT, 'about-side.txt')   # first line = heading, the rest = text
+        if os.path.isfile(side_path):
+            parts = [x.strip() for x in re.split(r'\n\s*\n', read_text(side_path).strip()) if x.strip()]
+            if parts:
+                side = '\n      <h2>%s</h2>' % h(parts[0]) + ''.join('\n      <p>%s</p>' % h(' '.join(x.split())) for x in parts[1:])
+        photo = '\n    <aside class="about-card">\n      <img src="assets/about.jpg" alt="">\n      <div class="about-card-body">%s\n      </div>\n    </aside>' % side
     prose = '\n'.join('      <p>%s</p>' % h(p) for p in paras)
     return f'''<section class="page-head">
   <div class="wrap">
