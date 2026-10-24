@@ -384,6 +384,17 @@ def render_card(car):
     desc_html = '<p class="desc">%s</p>' % h(car['short']) if car['short'] else ''
     price = h(car['price']) if car['price'] else ('&nbsp;' if is_sold else 'Call for price')
 
+    if is_sold:
+        # Sold tiles are display-only: no price, no "View details", no link to a page of their own.
+        return f'''<div class="card is-sold" data-search="{h(search)}">
+  <div class="thumb">{thumb}{badge}</div>
+  <div class="card-body">
+    <h3>{h(car['name'])}</h3>
+    {chips_html}
+    {desc_html}
+  </div>
+</div>'''
+
     return f'''<a class="card{' is-sold' if is_sold else ''}" href="{car['file']}" data-search="{h(search)}">
   <div class="thumb">{thumb}{badge}</div>
   <div class="card-body">
@@ -671,6 +682,8 @@ def build():
 
     for car in stock + sold:
         process_photos(car)
+        if car['kind'] == 'sold':
+            continue  # sold cars have no page of their own (their photos are kept in case they go back on sale)
         write(car['file'], page(car['name'], 'sold' if car['kind'] == 'sold' else 'inventory',
                                 car_page(car, stock), car['short']))
 
