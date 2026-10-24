@@ -346,6 +346,7 @@ function buildDesc(f) {
   if (oneLine(f.batUrl) && (oneLine(f.status) === BAT || f.batKeep)) lines.push(BAT_KEY + ': ' + oneLine(f.batUrl));
   STD.forEach(k => {
     let v = oneLine(f.vals[k]);
+    if (k === 'Price' || k === 'Mileage') v = v.replace(/(?<![\d,.])\d{4,}(?![\d,])/g, n => Number(n).toLocaleString('en-US'));   // 18500 -> 18,500
     if (k === 'Price' && /^\d/.test(v)) v = '$' + v;   // add a $ only if the author didn't type a currency symbol
     if (v) lines.push(k + ': ' + v);
   });

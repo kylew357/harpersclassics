@@ -132,6 +132,11 @@ def about_paragraphs():
 
 
 # ---------------------------------------------------------------- cars
+def add_commas(v):
+    """18500 -> 18,500 (only digit runs of 4+ that have no comma or decimal point attached already)."""
+    return re.sub(r'(?<![\d,.])\d{4,}(?![\d,])', lambda m: '{:,}'.format(int(m.group())), v)
+
+
 def parse_description(raw):
     raw = raw.replace('\r\n', '\n').replace('\r', '\n').strip()
     blocks = re.split(r'\n\s*\n', raw) if raw else []
@@ -181,6 +186,7 @@ def load_car(kind, name, slug):
 
     txts = sorted((f for f in files if f.lower().endswith('.txt')), key=natkey)
     specs, paragraphs, short = parse_description(read_text(os.path.join(path, txts[0])) if txts else '')
+    specs = [(k, add_commas(v) if k.lower() in ('price', 'mileage') else v) for k, v in specs]
 
     images = sorted((f for f in files if os.path.splitext(f)[1].lower() in IMAGE_EXT), key=natkey)
     for i, f in enumerate(images):
