@@ -195,7 +195,7 @@ def load_car(kind, name, slug):
     return {
         'kind': kind, 'name': name, 'slug': slug, 'images': images, 'photos': [],
         'specs': specs, 'paragraphs': paragraphs, 'short': short,
-        'price': spec_get(specs, 'price'), 'status': status,
+        'price': ('$' + spec_get(specs, 'price')) if spec_get(specs, 'price')[:1].isdigit() else spec_get(specs, 'price'), 'status': status,
         'time': folder_time(rel),
         'file': ('sold-' if kind == 'sold' else 'car-') + slug + '.html',
     }

@@ -333,7 +333,11 @@ function buildDesc(f) {
   const lines = [];
   if (oneLine(f.status)) lines.push('Status: ' + oneLine(f.status));
   if (oneLine(f.batUrl) && (oneLine(f.status) === BAT || f.batKeep)) lines.push(BAT_KEY + ': ' + oneLine(f.batUrl));
-  STD.forEach(k => { if (oneLine(f.vals[k])) lines.push(k + ': ' + oneLine(f.vals[k])); });
+  STD.forEach(k => {
+    let v = oneLine(f.vals[k]);
+    if (k === 'Price' && /^\d/.test(v)) v = '$' + v;   // add a $ only if the author didn't type a currency symbol
+    if (v) lines.push(k + ': ' + v);
+  });
   f.custom.forEach(([k, v]) => { if (oneLine(k) && oneLine(v)) lines.push(oneLine(k).replace(/:/g, '') + ': ' + oneLine(v)); });
   const body = f.body.replace(/\r\n?/g, '\n').trim().split(/\n\s*\n/).map(p => p.replace(/\s*\n\s*/g, ' ').trim()).filter(Boolean).join('\n\n');
   return (lines.length ? lines.join('\n') + '\n\n' : '') + body + '\n';
