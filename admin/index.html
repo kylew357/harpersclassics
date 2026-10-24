@@ -24,6 +24,11 @@ body{margin:0;font:1rem/1.5 "Roboto",system-ui,-apple-system,"Segoe UI",Arial,sa
 main{max-width:640px;margin:0 auto;padding:16px 16px calc(130px + env(safe-area-inset-bottom))}
 h2{font-family:inherit;font-weight:700;font-size:1.35rem;margin:28px 0 12px}
 h2 small{font-weight:400;font-size:.9rem;color:var(--muted)}
+details.sec>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;-webkit-tap-highlight-color:transparent}
+details.sec>summary::-webkit-details-marker{display:none}
+details.sec>summary h2{margin:22px 0 12px}
+details.sec>summary::after{content:"";width:11px;height:11px;border-right:2.5px solid var(--muted);border-bottom:2.5px solid var(--muted);transform:rotate(45deg);margin:0 6px 4px 12px;transition:transform .2s}
+details.sec[open]>summary::after{transform:rotate(-135deg);margin-bottom:-4px}
 p{margin:0 0 12px}
 a{color:var(--accent)}
 .hint,small{color:var(--muted);font-size:.9rem}
@@ -128,7 +133,13 @@ const SORTS = [['added', 'Newest added first'], ['oldest', 'Oldest added first']
 function loadPrefs() {
   const sv = store.get('hc_sort');
   state.sort = SORTS.some(x => x[0] === sv) ? sv : 'added';
+  loadShut();
   try { state.added = JSON.parse(store.get('hc_added:' + state.repo) || '{}') || {}; } catch (e) { state.added = {}; }
+}
+state.shut = {};   // collapsed list sections; everything starts open
+function loadShut() { try { state.shut = JSON.parse(store.get('hc_shut') || '{}') || {}; } catch (e) { state.shut = {}; } }
+function section(id, title, count, inner) {
+  return `<details class="sec" data-sec="${id}"${state.shut[id] ? '' : ' open'}><summary><h2>${title} <small>${count}</small></h2></summary>${inner}</details>`;
 }
 function saveAdded() { store.set('hc_added:' + state.repo, JSON.stringify(state.added)); }
 let form = null, uid = 0;
@@ -457,11 +468,9 @@ function viewList(skipMeta) {
     <button class="btn primary big" id="add" type="button">+ Add a car</button>
     <label class="sortbar">Sort by
       <select id="sort" aria-label="Sort cars">${SORTS.map(([v, l]) => `<option value="${v}"${v === state.sort ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
-    <h2>For sale <small>${sale.length}</small></h2>
-    ${sale.length ? sale.map(carCard).join('') : '<p class="empty">Nothing for sale yet. Tap “Add a car”.</p>'}
-    <h2>Sold <small>${sold.length}</small></h2>
-    ${sold.length ? sold.map(carCard).join('') : '<p class="empty">No sold cars.</p>'}
-    ${hid.length ? `<h2>Hidden <small>${hid.length}</small></h2><p class="hint" style="margin:-4px 0 12px">Hidden cars stay in your repository but do not appear on the website.</p>${hid.map(carCard).join('')}` : ''}
+    ${section('sale', 'For sale', sale.length, sale.length ? sale.map(carCard).join('') : '<p class="empty">Nothing for sale yet. Tap “Add a car”.</p>')}
+    ${section('sold', 'Sold', sold.length, sold.length ? sold.map(carCard).join('') : '<p class="empty">No sold cars.</p>')}
+    ${hid.length ? section('hidden', 'Hidden', hid.length, `<p class="hint" style="margin:-4px 0 12px">Hidden cars stay in your repository but do not appear on the website.</p>${hid.map(carCard).join('')}`) : ''}
     <div class="links">
       <button class="btn" id="site-info" type="button">Edit site info (phone, hours, about)</button>
       <a class="btn" href="../" target="_blank" rel="noopener">View live site</a>
@@ -751,6 +760,10 @@ app.addEventListener('input', ev => {
   else if (el.dataset.ck !== undefined) form.custom[+el.closest('.kv').dataset.i][0] = el.value;
   else if (el.dataset.cv !== undefined) form.custom[+el.closest('.kv').dataset.i][1] = el.value;
 });
+app.addEventListener('toggle', ev => {
+  const d = ev.target;
+  if (d.classList && d.classList.contains('sec')) { state.shut[d.dataset.sec] = !d.open; store.set('hc_shut', JSON.stringify(state.shut)); }
+}, true);
 app.addEventListener('change', ev => {
   const el = ev.target;
   if (el.id === 'sort') { state.sort = el.value; store.set('hc_sort', state.sort); viewList(true); return; }
