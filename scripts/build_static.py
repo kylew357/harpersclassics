@@ -539,7 +539,8 @@ def car_page(car, stock):
     if car['paragraphs']:
         desc = '<div class="prose car-desc">\n%s\n      </div>' % '\n'.join('        <p>%s</p>' % h(p) for p in car['paragraphs'])
 
-    price = '<p class="price-big">%s</p>' % h(car['price']) if car['price'] else ''
+    price_text = car['price'] or ('' if is_sold else 'Call for price')
+    price = '<p class="price-big">%s</p>' % h(price_text) if price_text else ''
     table = ''
     if specs:
         rows = ''.join('<tr><th>%s</th><td>%s</td></tr>' % (h(k), h(v)) for k, v in specs)
