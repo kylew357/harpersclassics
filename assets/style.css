@@ -184,9 +184,9 @@ p { margin: 0 0 1em; }
 .card-body { display: flex; flex-direction: column; flex: 1; padding: 22px 24px 20px; }
 .card-body h3 { font-size: 1.35rem; margin-bottom: 10px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
-.chips span { font-size: .78rem; color: var(--muted); background: #f1eee7; padding: 3px 10px; border-radius: 999px; }
+.chips span { font-size: .78rem; font-weight: 500; color: var(--ink); background: #f1eee7; padding: 3px 10px; border-radius: 999px; }
 .desc {
-  color: var(--muted); font-size: .96rem; margin-bottom: 18px;
+  color: var(--ink); font-size: .96rem; margin-bottom: 18px;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 .card-foot { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 16px; border-top: 1px solid var(--line); }

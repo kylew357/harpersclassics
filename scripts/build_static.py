@@ -370,6 +370,10 @@ def render_card(car):
     chips = []
     for k, v in car['specs']:
         if k.lower() not in ('price', 'status', 'year', BAT_KEY) and len(chips) < 2:
+            if k.lower() == 'mileage':
+                m = re.match(r'^([\d.,\s]+?)\s*(?:mi\.?|miles?)?$', v.strip(), flags=re.I)
+                if m:
+                    v = m.group(1) + ' miles'   # "34,232" or "34,232 mi" -> "34,232 miles"
             chips.append(v)
     search = ' '.join([car['name'], car['short']] + [v for k, v in car['specs'] if k.lower() != BAT_KEY]).lower()
 
