@@ -67,7 +67,7 @@ More paragraphs (after a blank line) only show on the car's own page.
 - The `Key: Value` lines at the top become the details table. Use any keys you like.
 - **There must be a blank line** between the `Key: Value` lines and your description text.
 - `Price` is shown on the tile and large on the car page. If you leave it out, the tile says "Call for price".
-- `Status` shows as a badge (`Just In`, `Sale Pending`, ...). Cars in `sold/` get "Sold" automatically.
+- `Status` shows as a badge (`Just In`, `Sale Pending`, `Price Reduced`, `Auction Soon`, ...). Cars in `sold/` get "Sold" automatically.
 - `Bring a Trailer URL: https://bringatrailer.com/listing/...` adds a *View on Bring a Trailer* button to the car's page (the admin page writes this line for you; it is not shown in the details table).
 - The first two other details (like Mileage, Engine) show as small chips on the tile.
 
