@@ -169,7 +169,7 @@ function friendly(status, j) {
   const msg = (j && j.message) || '';
   if (status === 401) return 'GitHub rejected the token. It may have expired. Sign out and enter a new one.';
   if (status === 403) return 'GitHub said no (403). Check that your token has "Contents: Read and write" access to this repository. ' + msg;
-  if (status === 404) return 'Not found. Check the repository name, and that your token has access to it.';
+  if (status === 404) return 'Not found: "' + state.repo + '". Check the repository name is spelled exactly (kylew357/harpersclasssics, with three s in "classsics"), and that your token was given access to that repository.';
   return msg || ('GitHub request failed (' + status + ').');
 }
 async function api(path, method, body, wantLink) {
