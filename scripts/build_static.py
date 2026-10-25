@@ -111,6 +111,25 @@ def safe_url(u):
     return u if re.match(r'^https?://[^\s<>"\']+$', u, re.I) else ''
 
 
+SOCIAL_ICONS = {   # label in site.json -> inline icon (24x24)
+    'Instagram': '<rect x="3.5" y="3.5" width="17" height="17" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.3" cy="6.7" r="1.2" fill="currentColor"/>',
+    'Facebook': '<path fill="currentColor" d="M13.5 21v-8h2.7l.5-3.3h-3.2V7.6c0-1 .4-1.7 1.8-1.7h1.5V3.1C16.1 3 15.2 3 14.2 3 11.6 3 10 4.6 10 7.3v2.4H7.3V13H10v8h3.5z"/>',
+    'TikTok': '<path fill="currentColor" d="M16.6 3c.3 2.3 1.6 3.7 3.9 3.9v3.2c-1.4.1-2.7-.3-3.9-1.1v6.1c0 3.1-2.5 5.4-5.5 5.4-3 0-5.5-2.3-5.5-5.3 0-3.3 2.9-5.7 6.2-5.2v3.3c-1.6-.5-3 .6-3 2.1 0 1.3 1 "/>',
+    'YouTube': '<path fill="currentColor" d="M21.6 7.2c-.2-.9-.9-1.5-1.8-1.7C18.2 5.2 12 5.2 12 5.2s-6.2 0-7.8.3c-.9.2-1.6.8-1.8 1.7C2.1 8.8 2.1 12 2.1 12s0 3.2.3 4.8c.2.9.9 1.5 1.8 1.7 1.6.3 7.8.3 7.8.3s6.2 0 7.8-.3c.9-.2 1.6-.8 1.8-1.7.3-1.6.3-4.8.3-4.8s0-3.2-.3-4.8zM10 15.2V8.8l5.5 3.2-5.5 3.2z"/>',
+}
+
+
+def social_row(cls):
+    """Round icon links for every network that has a web address in site.json ('social')."""
+    links = []
+    for label, icon in SOCIAL_ICONS.items():
+        url = safe_url(SITE['social'].get(label, ''))
+        if url:
+            links.append('<a href="%s" target="_blank" rel="noopener" aria-label="%s"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">%s</svg></a>'
+                         % (h(url), label, icon))
+    return '<div class="social %s">%s</div>' % (cls, ''.join(links)) if links else ''
+
+
 def spec_get(specs, key):
     for k, v in specs:
         if k.lower() == key:
@@ -355,10 +374,11 @@ def page(title, active, body, desc=None):
     if s['address']:
         contact_items.append('<li>%s</li>' % h(s['address']))
     for label, url in s['social'].items():
-        if url:
+        if url and label not in SOCIAL_ICONS:
             contact_items.append('<li><a href="%s" target="_blank" rel="noopener">%s</a></li>' % (h(url), h(label)))
     explore = ''.join('<li><a href="%s">%s</a></li>' % (href, label) for _, href, label in NAV)
     tagline = '<p class="muted-light">%s</p>' % h(s['tagline']) if s['tagline'] else ''
+    tagline += social_row('social-foot')
 
     return f'''<!doctype html>
 <html lang="en">
@@ -484,7 +504,7 @@ def home_page(stock, sold):
 
     return f'''<section class="hero"{hero_style}>
   <div class="wrap hero-inner">
-    {eyebrow}
+    {social_row('social-hero')}{eyebrow}
     <h1>{h(s['headline'])}</h1>
     {sub}
     <div class="hero-actions">
