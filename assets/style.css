@@ -273,3 +273,13 @@ a.contact-big:hover { color: var(--accent); }
 .footer-bottom { padding-top: 22px; padding-bottom: 28px; border-top: 1px solid rgba(255, 255, 255, .12); font-size: .85rem; color: rgba(255, 255, 255, .5); }
 .lb-count { position: absolute; left: 0; right: 0; bottom: calc(22px + env(safe-area-inset-bottom)); text-align: center; color: rgba(255, 255, 255, .75); font-size: .9rem; pointer-events: none; }
 @media (hover: none) and (pointer: coarse) { .lb-prev, .lb-next { display: none; } }
+
+/* ---------- about-page photo gallery ---------- */
+.gallery-section { padding-top: 24px; padding-bottom: 96px; border-top: 1px solid var(--line); margin-top: 24px; }
+.gallery-section h2 { font-size: clamp(1.8rem, 3.4vw, 2.6rem); margin: 0 0 10px; }
+.gallery-sub { color: var(--muted); max-width: 56ch; margin: 0 0 34px; }
+.photo-wall { columns: 3 260px; column-gap: 16px; }
+.g-item { display: block; width: 100%; padding: 0; border: 0; background: #e9e5dd; margin: 0 0 16px; border-radius: 14px; overflow: hidden; cursor: zoom-in; break-inside: avoid; }
+.g-item img { display: block; width: 100%; height: auto; transition: transform .35s; }
+.g-item:hover img { transform: scale(1.04); }
+@media (max-width: 600px) { .photo-wall { columns: 2 140px; column-gap: 10px; } .g-item { margin-bottom: 10px; border-radius: 10px; } }

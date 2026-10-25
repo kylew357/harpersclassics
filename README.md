@@ -31,6 +31,7 @@ before they upload, so there is nothing to resize by hand.
 - **Sort the list:** use *Sort by* to order cars by newest or oldest added, by year, or by name. The year comes from the title (or the Year detail if the title has none), and "added" is the date the car was first put on the site.
 - **Delete:** tap *Delete* to remove a car and its photos.
 - **Phone, hours and About text:** tap *Edit site info*.
+- **About page photo gallery:** tap *About page photo gallery*, then *Add photos* (they are shrunk to about 1200 px and compressed hard before upload). Use ‹ and › to reorder, × to remove, then *Save gallery*. New photos go first. The photos live in the `gallery/` folder and show in file-name order (`001.jpg`, `002.jpg`, ...). The gallery section appears on the About page only once there is at least one photo.
 
 Changes go live about a minute after you publish.
 

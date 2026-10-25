@@ -243,6 +243,47 @@ def fit(im, side):
     return im.resize((max(1, round(w * scale)), max(1, round(h_ * scale))), Image.LANCZOS)
 
 
+GALLERY_SIDE, GALLERY_THUMB = 1200, 600   # the About-page gallery is kept small on purpose
+
+
+def gallery_photos():
+    """Photos in gallery/ (shown in order of file name). Writes small copies + thumbnails into dist/."""
+    src_dir = os.path.join(ROOT, 'gallery')
+    if not os.path.isdir(src_dir):
+        return []
+    names = sorted((f for f in os.listdir(src_dir) if not f.startswith(('.', '_'))
+                    and os.path.splitext(f)[1].lower() in IMAGE_EXT and os.path.isfile(os.path.join(src_dir, f))), key=natkey)
+    dest, tdest = os.path.join(OUT, 'gallery'), os.path.join(OUT, 'thumbs', 'gallery')
+    os.makedirs(dest, exist_ok=True)
+    os.makedirs(tdest, exist_ok=True)
+    out_list = []
+    for f in names:
+        stem, ext = os.path.splitext(f)
+        out = stem + '.jpg' if ext.lower() not in PASSTHRU_EXT else f
+        src = os.path.join(src_dir, f)
+        try:
+            if ext.lower() in PASSTHRU_EXT or Image is None:
+                shutil.copy2(src, os.path.join(dest, f))
+                out = f
+                thumb = False
+            else:
+                with Image.open(src) as im:
+                    im = ImageOps.exif_transpose(im)
+                    im = im.convert('RGB')
+                    big = fit(im, GALLERY_SIDE)
+                    if big is im and ext.lower() in ('.jpg', '.jpeg') and os.path.getsize(src) < 350 * 1024:
+                        shutil.copy2(src, os.path.join(dest, out))     # already small (the admin page makes them small)
+                    else:
+                        big.save(os.path.join(dest, out), 'JPEG', quality=72, optimize=True, progressive=True)
+                    fit(im, GALLERY_THUMB).save(os.path.join(tdest, out), 'JPEG', quality=70, optimize=True, progressive=True)
+                    thumb = True
+        except Exception as e:
+            print('WARNING: skipped gallery photo %s (%s)' % (f, e))
+            continue
+        out_list.append({'url': url_path('gallery', out), 'thumb': url_path('thumbs', 'gallery', out) if thumb else url_path('gallery', out)})
+    return out_list
+
+
 def process_photos(car):
     """Copy/resize this car's photos into dist/ and fill car['photos']."""
     src_dir = os.path.join(ROOT, car['kind'], car['name'])
@@ -616,7 +657,7 @@ def car_page(car, stock):
 </div>'''
 
 
-def about_page():
+def about_page(gallery=()):
     s = SITE
     paras = about_paragraphs()
     eyebrow = 'Since ' + h(s['since']) if s['since'] else 'Our story'
@@ -630,6 +671,17 @@ def about_page():
                 side = '\n      <h2>%s</h2>' % h(parts[0]) + ''.join('\n      <p>%s</p>' % h(' '.join(x.split())) for x in parts[1:])
         photo = '\n    <aside class="about-card">\n      <img src="assets/about.jpg" alt="">\n      <div class="about-card-body">%s\n      </div>\n    </aside>' % side
     prose = '\n'.join('      <p>%s</p>' % h(p) for p in paras)
+    gallery_html = ''
+    if gallery:
+        tiles = ''.join('<button type="button" class="g-item"><img loading="lazy" src="%s" alt=""></button>' % h(g['thumb']) for g in gallery)
+        gallery_html = f'''
+
+<section class="wrap gallery-section" id="gallery">
+  <p class="eyebrow dark">Gallery</p>
+  <h2>Events &amp; special moments</h2>
+  <p class="gallery-sub">Some of our favorites</p>
+  <div class="photo-wall" data-gallery-grid data-images="{h(json.dumps([g['url'] for g in gallery]))}">{tiles}</div>
+</section>'''
     return f'''<section class="page-head">
   <div class="wrap">
     <p class="eyebrow dark">{eyebrow}</p>
@@ -644,7 +696,7 @@ def about_page():
       <a class="btn btn-primary" href="inventory.html">See what we have</a>
     </div>{photo}
   </div>
-</section>'''
+</section>{gallery_html}'''
 
 
 def contact_page():
@@ -708,7 +760,7 @@ def build():
                                  'Current inventory of classic cars and trucks for sale.'))
     write('sold.html', page('Sold', 'sold', sold_page(sold),
                             'A look at classic cars and trucks we have recently sold.'))
-    write('about.html', page('About', 'about', about_page(), about_paragraphs()[0]))
+    write('about.html', page('About', 'about', about_page(gallery_photos()), about_paragraphs()[0]))
     write('contact.html', page('Contact', 'contact', contact_page(),
                                'Get in touch about a car, or to buy or consign a classic.'))
 

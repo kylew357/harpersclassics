@@ -67,6 +67,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ink)}
 .ph .star{bottom:4px;left:4px;font-size:1.05rem}
 .ph.cover .star{background:var(--accent)}
 .ph.gone{opacity:.35}
+.ph .l{bottom:4px;left:4px}.ph .r{bottom:4px;right:4px}.ph button:disabled{opacity:.25}
+.ph .n{position:absolute;top:4px;left:4px;min-width:26px;height:26px;padding:0 7px;border-radius:13px;background:rgba(20,18,15,.72);color:#fff;font-size:.8rem;font-weight:700;display:flex;align-items:center;justify-content:center}
 .ph.gone .x{background:var(--accent)}
 .pick{position:relative;display:flex;align-items:center;justify-content:center;min-height:52px;border:1.5px dashed var(--muted);border-radius:12px;font-weight:600;cursor:pointer;margin:0}
 .pick input{position:absolute;inset:0;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
@@ -116,6 +118,7 @@ const extOf = n => (n.match(/\.[^.]+$/) || [''])[0].toLowerCase();
 const IMG_EXT = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.avif', '.svg', '.heic', '.heif'];
 const isImg = n => IMG_EXT.includes(extOf(n));
 const MAX_SIDE = 1600, QUALITY = 0.82;
+const GAL_SIDE = 1200, GAL_QUALITY = 0.62;   // About-page gallery photos are kept extra small
 const STD = ['Price', 'Year', 'Mileage', 'Color', 'Engine', 'Transmission', 'Drivetrain'];
 const BAT = 'Bring a Trailer';                 // Badge choice that adds a link to the car's Bring a Trailer listing
 const BAT_KEY = 'Bring a Trailer URL';         // the description.txt line that stores that link
@@ -369,7 +372,7 @@ function cleanTitle(t) {
 }
 
 /* ---------------------------------------------------------------- photos: resize on the phone */
-async function resizePhoto(file) {
+async function resizePhoto(file, maxSide, quality) {
   const url = URL.createObjectURL(file);
   try {
     const img = await new Promise((res, rej) => {
@@ -379,13 +382,13 @@ async function resizePhoto(file) {
       i.src = url;
     });
     let w = img.naturalWidth, h = img.naturalHeight;
-    const k = Math.min(1, MAX_SIDE / Math.max(w, h));
+    const k = Math.min(1, (maxSide || MAX_SIDE) / Math.max(w, h));
     w = Math.max(1, Math.round(w * k)); h = Math.max(1, Math.round(h * k));
     const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
     const cx = cv.getContext('2d');
     cx.fillStyle = '#fff'; cx.fillRect(0, 0, w, h);
     cx.drawImage(img, 0, 0, w, h);
-    const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', QUALITY));
+    const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', quality || QUALITY));
     if (!blob) throw new Error('Could not resize the photo "' + file.name + '".');
     const b64 = await new Promise((res, rej) => {
       const fr = new FileReader();
@@ -474,6 +477,7 @@ function viewList(skipMeta) {
     ${hid.length ? section('hidden', 'Hidden', hid.length, `<p class="hint" style="margin:-4px 0 12px">Hidden cars stay in your repository but do not appear on the website.</p>${hid.map(carCard).join('')}`) : ''}
     <div class="links">
       <button class="btn" id="site-info" type="button">Edit site info (phone, hours, about)</button>
+      <button class="btn" id="gallery-btn" type="button">About page photo gallery</button>
       <a class="btn" href="../" target="_blank" rel="noopener">View live site</a>
       <button class="btn" id="signout" type="button">Sign out</button>
     </div>
@@ -725,6 +729,71 @@ async function viewSite() {
   });
 }
 
+
+/* ---------------------------------------------------------------- About page photo gallery */
+let gal = null;
+function galFiles() {
+  return state.entries.filter(e => e.type === 'blob' && /^gallery\/[^\/]+$/.test(e.path) && isImg(e.path.slice(8)) && !/^[._]/.test(e.path.slice(8)))
+    .map(e => ({name: e.path.slice(8), sha: e.sha})).sort((a, b) => natcmp(a.name, b.name));
+}
+function viewGallery() {
+  state.view = 'gallery';
+  setTitle('Photo gallery', true);
+  gal = {dirty: false, orig: galFiles(), items: []};
+  gal.items = gal.orig.map(f => ({id: ++uid, kind: 'old', name: f.name, sha: f.sha, url: rawUrl('gallery/' + f.name)}));
+  form = gal;   // lets the Back button ask before throwing away changes
+  renderGallery();
+}
+function renderGallery() {
+  const n = gal.items.length;
+  app.innerHTML = `
+    <p class="hint" style="margin-top:0">These photos appear at the bottom of the About page, in this order. Photos are shrunk on your phone before they upload.</p>
+    <label class="pick">+ Add photos<input id="g-files" type="file" accept="image/*" multiple></label>
+    <h2>Photos <small>${n}</small></h2>
+    ${n ? '' : '<p class="empty">No photos yet. Tap “Add photos”.</p>'}
+    <div class="pgrid" id="gphotos">${gal.items.map((p, i) => `
+      <div class="ph" data-id="${p.id}"><img src="${esc(p.kind === 'new' ? p.preview : p.url)}" alt="">
+        <span class="n">${i + 1}</span>
+        <button class="x" type="button" data-g="del" aria-label="Remove photo">&times;</button>
+        <button class="l" type="button" data-g="left" aria-label="Move earlier"${i === 0 ? ' disabled' : ''}>&#8249;</button>
+        <button class="r" type="button" data-g="right" aria-label="Move later"${i === n - 1 ? ' disabled' : ''}>&#8250;</button>
+      </div>`).join('')}</div>
+    <p class="hint">Tap ‹ or › to move a photo earlier or later, × to remove it. Nothing changes on the site until you tap Save.</p>
+    <div class="dock"><div class="dock-in"><button class="btn primary big" id="g-save" type="button">Save gallery</button></div></div>`;
+}
+async function addGalleryPhotos(fileList) {
+  const files = Array.from(fileList), fresh = [];
+  for (let i = 0; i < files.length; i++) {
+    busy('Preparing photo ' + (i + 1) + ' of ' + files.length + '…');
+    try {
+      const r = await resizePhoto(files[i], GAL_SIDE, GAL_QUALITY);
+      fresh.push({id: ++uid, kind: 'new', b64: r.b64, preview: r.preview});
+    } catch (e) { toast(e.message, true); }
+  }
+  idle();
+  if (fresh.length) { gal.items = fresh.concat(gal.items); gal.dirty = true; }   // newest first
+  renderGallery();
+}
+async function saveGallery() {
+  const pad = i => String(i + 1).padStart(3, '0');
+  const final = new Map();   // path -> {sha} | {b64}
+  gal.items.forEach((p, i) => final.set('gallery/' + pad(i) + (p.kind === 'new' ? '.jpg' : extOf(p.name)), p.kind === 'new' ? {b64: p.b64} : {sha: p.sha}));
+  const old = new Map(gal.orig.map(f => ['gallery/' + f.name, f.sha]));
+  const changes = [];
+  final.forEach((v, path) => { if (!(v.sha && old.get(path) === v.sha)) changes.push(Object.assign({path}, v)); });
+  old.forEach((sha, path) => { if (!final.has(path)) changes.push({path, del: true}); });
+  if (!changes.length) { toast('No changes to save.'); return; }
+  busy('Saving gallery…');
+  try {
+    await refresh();
+    await commit(changes, 'Update About page gallery', (d, t) => busy('Uploading photo ' + d + ' of ' + t + '…'));
+    await refresh();
+    gal = null; form = null;
+    viewList();
+    toast('Gallery saved. The live site updates in about a minute.');
+  } catch (e) { toast(e.message, true); } finally { idle(); }
+}
+
 /* ---------------------------------------------------------------- events */
 app.addEventListener('click', ev => {
   const t = ev.target.closest('button');
@@ -732,6 +801,15 @@ app.addEventListener('click', ev => {
   const act = t.dataset.act;
   if (t.id === 'add') return openCar(null);
   if (t.id === 'site-info') return viewSite();
+  if (t.id === 'gallery-btn') return viewGallery();
+  if (t.id === 'g-save') return saveGallery();
+  if (t.dataset.g && gal) {
+    const el = t.closest('.ph'), i = gal.items.findIndex(x => x.id === +el.dataset.id), it = gal.items;
+    if (t.dataset.g === 'del') it.splice(i, 1);
+    else if (t.dataset.g === 'left' && i > 0) [it[i - 1], it[i]] = [it[i], it[i - 1]];
+    else if (t.dataset.g === 'right' && i < it.length - 1) [it[i + 1], it[i]] = [it[i], it[i + 1]];
+    gal.dirty = true; renderGallery(); return;
+  }
   if (t.id === 'signout') { store.del('hc_admin'); state.token = ''; return viewSetup(); }
   if (t.id === 'publish') return publish();
   if (t.id === 'add-kv') { form.custom.push(['', '']); form.dirty = true; renderCustom(); const k = app.querySelectorAll('[data-ck]'); k[k.length - 1].focus(); return; }
@@ -774,12 +852,14 @@ app.addEventListener('toggle', ev => {
 app.addEventListener('change', ev => {
   const el = ev.target;
   if (el.id === 'sort') { state.sort = el.value; store.set('hc_sort', state.sort); viewList(true); return; }
+  if (el.id === 'g-files' && gal) { addGalleryPhotos(el.files).then(() => { el.value = ''; }); return; }
   if (!form) return;
   if (el.id === 'f-status') { form.status = el.value; form.dirty = true; const w = $('#bat-wrap'); if (w) w.hidden = form.status !== BAT; }
   if (el.id === 'f-files') { addPhotos(el.files).then(() => { el.value = ''; }); }
 });
 $('#back').addEventListener('click', () => {
   if (form && form.dirty && !confirm('Discard your changes?')) return;
+  gal = null;
   viewList();
 });
 
