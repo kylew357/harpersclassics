@@ -125,8 +125,8 @@ def social_row(cls):
     for label, icon in SOCIAL_ICONS.items():
         url = safe_url(SITE['social'].get(label, ''))
         if url:
-            links.append('<a href="%s" target="_blank" rel="noopener" aria-label="%s"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">%s</svg></a>'
-                         % (h(url), label, icon))
+            links.append('<a href="%s" target="_blank" rel="noopener" aria-label="%s" data-tip="%s"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">%s</svg></a>'
+                         % (h(url), label, label, icon))
     return '<div class="social %s">%s</div>' % (cls, ''.join(links)) if links else ''
 
 
