@@ -1,9 +1,0 @@
-Status: Just In
-Price: $45,000
-Year: 1967
-Mileage: 81000
-Color: Red
-Engine: 350 V8
-Transmission: Automatic
-
-Excellent running, well kept car
