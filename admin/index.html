@@ -642,7 +642,7 @@ async function publish() {
 }
 
 // Rename a car's folder (move between cars/ and sold/, or add/remove the leading _ that hides it).
-async function relocate(key, destKind, destName, message, done) {
+async function relocate(key, destKind, destName, message, done, keepOnlyCover) {
   const c = state.cars.find(x => x.key === key);
   const dest = destKind + '/' + destName;
   busy('Updating…');
@@ -650,7 +650,12 @@ async function relocate(key, destKind, destName, message, done) {
     await refresh();
     if (state.cars.some(x => x.key.toLowerCase() === dest.toLowerCase())) throw new Error('"' + destName + '" already exists there.');
     const changes = [];
-    c.files.forEach(f => { changes.push({path: dest + '/' + f.name, sha: f.sha}); changes.push({path: key + '/' + f.name, del: true}); });
+    const cover = keepOnlyCover && c.photos[0];
+    c.files.forEach(f => {
+      changes.push({path: key + '/' + f.name, del: true});
+      if (cover && isImg(f.name) && f.name !== cover.name) return;   // sold: every photo except the cover is dropped to save space
+      changes.push({path: dest + '/' + f.name, sha: f.sha});
+    });
     await commit(changes, message);
     await refresh();
     viewList();
@@ -660,7 +665,8 @@ async function relocate(key, destKind, destName, message, done) {
 function moveFolder(key, toKind) {
   const c = state.cars.find(x => x.key === key);
   return relocate(key, toKind, c.name, (toKind === 'sold' ? 'Mark sold: ' : 'Back for sale: ') + c.title,
-    toKind === 'sold' ? 'Marked as sold. Live in about a minute.' : 'Moved back to for sale. Live in about a minute.');
+    toKind === 'sold' ? 'Marked as sold. Only the cover photo was kept. Live in about a minute.' : 'Moved back to for sale. Live in about a minute.',
+    toKind === 'sold');
 }
 function hideCar(key) {
   const c = state.cars.find(x => x.key === key);

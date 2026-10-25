@@ -25,7 +25,7 @@ before they upload, so there is nothing to resize by hand.
 - **Add a car:** tap *+ Add a car*, fill in the title, price and details, tap *Add photos* (pick from your library or take
   new ones), then tap *Publish to site*.
 - **Edit a car:** tap *Edit* to change any detail, add or remove photos, or choose the cover photo (★).
-- **Mark sold:** tap *Mark sold*. It moves to the Sold page. *Back for sale* undoes it.
+- **Mark sold:** tap *Mark sold*. It moves to the Sold page and only the cover photo is kept, to save space. *Back for sale* moves it back (add more photos with *Edit*).
 - **Bring a Trailer link:** in the car form, set **Badge** to *Bring a Trailer*, then paste the link to the car's listing in the box that appears. The car's page gets a *View on Bring a Trailer* button that opens it in a new tab, and the tile shows a *Bring a Trailer* badge.
 - **Hide a car:** tap *Hide* to take a car off the website without deleting it (it appears under *Hidden* on the admin page, and *Show on site* brings it back). This is the same as putting `_` or `.` at the start of the folder name on GitHub.
 - **Sort the list:** use *Sort by* to order cars by newest or oldest added, by year, or by name. The year comes from the title (or the Year detail if the title has none), and "added" is the date the car was first put on the site.
