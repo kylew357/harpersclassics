@@ -408,6 +408,7 @@ def page(title, active, body, desc=None):
 {body}
 </main>
 <footer class="site-footer">
+  <div class="wm-wrap" aria-hidden="true"><img class="wm" src="assets/logo-white.webp?v={asset_v('logo-white.webp')}" alt=""></div>
   <div class="wrap footer-grid">
     <div>
       <p class="footer-brand">{h(s['name'])}</p>

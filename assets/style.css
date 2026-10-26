@@ -294,3 +294,13 @@ a.contact-big:hover { color: var(--accent); }
 .social a::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translate(-50%, 4px); background: #fff; color: var(--ink); font: 600 .78rem/1 var(--sans); padding: 6px 10px; border-radius: 999px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .15s, transform .15s; box-shadow: 0 6px 16px rgba(0, 0, 0, .3); }
 .social a:hover::after, .social a:focus-visible::after { opacity: 1; transform: translate(-50%, 0); }
 @media (hover: none) { .social a::after { display: none; } }
+
+/* ---------- footer watermark: big, tilted, ghosted logo that bleeds up into the section above ---------- */
+.site-footer { position: relative; }
+.site-footer .footer-grid, .site-footer .footer-bottom { position: relative; z-index: 1; }
+.wm-wrap { position: absolute; left: 0; right: 0; bottom: 0; top: -520px; overflow: hidden; pointer-events: none; z-index: 0; }
+.wm { position: absolute; width: min(62vw, 820px); height: auto; right: -6%; top: calc(50% + 110px); transform: translateY(-50%) rotate(-14deg); opacity: .07;   /* centre sits 150px above the middle of the footer */ user-select: none; }
+/* where the section above is light (every page but Home) fade the top so it is not cut off hard */
+.site-footer::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 140px; background: linear-gradient(180deg, var(--ink), rgba(20, 18, 15, 0)); z-index: 1; pointer-events: none; }
+body:has(.cta) .site-footer::before { display: none; }
+@media (max-width: 700px) { .wm { width: 120vw; right: -30%; opacity: .08; } }
