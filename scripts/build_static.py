@@ -769,7 +769,8 @@ def build():
         print('NOTE: Pillow is not installed, so photos are copied without resizing.')
 
     for car in stock + sold:
-        process_photos(car)
+        process_photos(car)      # every car's photos first, so the "More from our inventory" tiles on each page have their pictures
+    for car in stock + sold:
         if car['kind'] == 'sold':
             continue  # sold cars have no page of their own (their photos are kept in case they go back on sale)
         write(car['file'], page(car['name'], 'sold' if car['kind'] == 'sold' else 'inventory',
