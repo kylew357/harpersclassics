@@ -174,7 +174,7 @@ function friendly(status, j) {
   const msg = (j && j.message) || '';
   if (status === 401) return 'GitHub rejected the token. It may have expired. Sign out and enter a new one.';
   if (status === 403) return 'GitHub said no (403). Check that your token has "Contents: Read and write" access to this repository. ' + msg;
-  if (status === 404) return 'Not found: "' + state.repo + '". Check the repository name is spelled exactly (kylew357/harpersclasssics, with three s in "classsics"), and that your token was given access to that repository.';
+  if (status === 404) return 'Not found: "' + state.repo + '". Check the repository name is spelled exactly (kylew357/harpersclassics), and that your token was given access to that repository.';
   return msg || ('GitHub request failed (' + status + ').');
 }
 async function api(path, method, body, wantLink) {
@@ -405,6 +405,95 @@ async function resizePhoto(file, maxSide, quality) {
 }
 
 /* ---------------------------------------------------------------- views */
+
+/* ---------------------------------------------------------------- login (the token is stored encrypted in login.json) */
+const KDF_ITER = 600000;
+const b64e = u8 => { let s = ''; u8.forEach(b => { s += String.fromCharCode(b); }); return btoa(s); };
+const b64d = str => Uint8Array.from(atob(str), c => c.charCodeAt(0));
+async function loginKey(user, pass, salt, iter) {
+  const raw = new TextEncoder().encode(String(user).trim().toLowerCase() + '\n' + pass);
+  const base = await crypto.subtle.importKey('raw', raw, 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({name: 'PBKDF2', hash: 'SHA-256', salt, iterations: iter}, base, {name: 'AES-GCM', length: 256}, false, ['encrypt', 'decrypt']);
+}
+async function sealLogin(cfg, user, pass, token) {
+  const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await loginKey(user, pass, salt, KDF_ITER);
+  const ct = await crypto.subtle.encrypt({name: 'AES-GCM', iv}, key, new TextEncoder().encode(JSON.stringify({token})));
+  return {v: 1, repo: cfg.repo, branch: cfg.branch, iter: KDF_ITER, salt: b64e(salt), iv: b64e(iv), ct: b64e(new Uint8Array(ct))};
+}
+async function openLogin(cfg, user, pass) {
+  const key = await loginKey(user, pass, b64d(cfg.salt), cfg.iter || KDF_ITER);
+  const pt = await crypto.subtle.decrypt({name: 'AES-GCM', iv: b64d(cfg.iv)}, key, b64d(cfg.ct));   // throws on a wrong username or password
+  return JSON.parse(new TextDecoder().decode(pt)).token;
+}
+async function loadLoginCfg() {
+  try {
+    const r = await fetch('login.json', {cache: 'no-store'});
+    if (!r.ok) return null;
+    const j = await r.json();
+    return j && j.ct && j.salt && j.iv && j.repo ? j : null;
+  } catch (e) { return null; }
+}
+function viewLogin(cfg, msg) {
+  state.view = 'login';
+  setTitle('Site admin', false);
+  app.innerHTML = `
+    ${msg ? '<p style="color:var(--danger)">' + esc(msg) + '</p>' : ''}
+    <form id="login" autocomplete="on">
+      <label>Username
+        <input id="l-user" name="username" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" required></label>
+      <label>Password
+        <input id="l-pass" name="password" type="password" autocomplete="current-password" required></label>
+      <button class="btn primary big" type="submit">Sign in</button>
+      <p class="hint">You stay signed in on this device until you tap Sign out.</p>
+    </form>
+    <p class="hint"><a href="#" id="use-token">Sign in with a GitHub token instead</a></p>`;
+  $('#use-token').addEventListener('click', ev => { ev.preventDefault(); viewSetup(); });
+  $('#login').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    busy('Signing in…');
+    let token;
+    try { token = await openLogin(cfg, $('#l-user').value, $('#l-pass').value); }
+    catch (e) { idle(); viewLogin(cfg, 'Wrong username or password.'); return; }
+    try {
+      Object.assign(state, {repo: cfg.repo, token, branch: cfg.branch || 'main'});
+      await api('https://api.github.com/repos/' + state.repo);
+      store.set('hc_admin', JSON.stringify({repo: state.repo, token, branch: state.branch}));
+      loadPrefs();
+      await refresh();
+      viewList();
+    } catch (e) {
+      state.token = '';
+      viewLogin(cfg, 'Signed in, but GitHub rejected the saved token (' + e.message + '). Use "Sign in with a GitHub token instead", then use Change login to save a new one.');
+    } finally { idle(); }
+  });
+}
+async function viewChangeLogin() {
+  state.view = 'login-edit';
+  setTitle('Change login', true);
+  app.innerHTML = `
+    <p class="hint" style="margin-top:0">Choose the username and password for the sign-in page. They lock the saved GitHub token. A short password can be guessed by anyone who downloads the page, so use a long one (several words).</p>
+    <form id="chg" autocomplete="off">
+      <label>New username<input id="c-user" autocapitalize="off" autocorrect="off" spellcheck="false" required></label>
+      <label>New password<input id="c-pass" type="password" autocomplete="new-password" required></label>
+      <label>New GitHub token <small>Leave empty to keep the current one</small><input id="c-token" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></label>
+    </form>
+    <div class="dock"><div class="dock-in"><button class="btn primary big" id="c-save" type="button">Save login</button></div></div>`;
+  $('#c-save').addEventListener('click', async () => {
+    const user = $('#c-user').value.trim(), pass = $('#c-pass').value, tok = $('#c-token').value.trim() || state.token;
+    if (!user || !pass) { toast('Enter a username and a password.', true); return; }
+    busy('Saving login…');
+    try {
+      const sealed = await sealLogin({repo: state.repo, branch: state.branch}, user, pass, tok);
+      await refresh();
+      await commit([{path: 'admin/login.json', text: JSON.stringify(sealed, null, 2) + '\n'}], 'Update admin login');
+      if (tok !== state.token) { state.token = tok; store.set('hc_admin', JSON.stringify({repo: state.repo, token: tok, branch: state.branch})); }
+      await refresh(); viewList();
+      toast('Login saved. It works on the sign-in page in about a minute.');
+    } catch (e) { toast(e.message, true); } finally { idle(); }
+  });
+}
+
 function viewSetup(msg) {
   state.view = 'setup';
   setTitle('Site admin', false);
@@ -421,7 +510,7 @@ function viewSetup(msg) {
     </div>
     ${msg ? '<p style="color:var(--danger)">' + esc(msg) + '</p>' : ''}
     <form id="setup">
-      <label>Repository <small>owner/name, for example kylew357/harpersclasssics</small>
+      <label>Repository <small>owner/name, for example kylew357/harpersclassics</small>
         <input id="f-repo" value="${esc(repo)}" autocapitalize="off" autocorrect="off" spellcheck="false" required></label>
       <label>Access token
         <input id="f-token" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" required></label>
@@ -480,6 +569,7 @@ function viewList(skipMeta) {
     <div class="links">
       <button class="btn" id="site-info" type="button">Edit site info (phone, hours, about)</button>
       <button class="btn" id="gallery-btn" type="button">About page photo gallery</button>
+      <button class="btn" id="change-login" type="button">Change login (username, password)</button>
       <a class="btn" href="../" target="_blank" rel="noopener">View live site</a>
       <button class="btn" id="signout" type="button">Sign out</button>
     </div>
@@ -804,6 +894,7 @@ app.addEventListener('click', ev => {
   if (t.id === 'add') return openCar(null);
   if (t.id === 'site-info') return viewSite();
   if (t.id === 'gallery-btn') return viewGallery();
+  if (t.id === 'change-login') return viewChangeLogin();
   if (t.id === 'g-save') return saveGallery();
   if (t.dataset.g && gal) {
     const el = t.closest('.ph'), i = gal.items.findIndex(x => x.id === +el.dataset.id), it = gal.items;
@@ -812,7 +903,7 @@ app.addEventListener('click', ev => {
     else if (t.dataset.g === 'right' && i < it.length - 1) [it[i + 1], it[i]] = [it[i], it[i + 1]];
     gal.dirty = true; renderGallery(); return;
   }
-  if (t.id === 'signout') { store.del('hc_admin'); state.token = ''; return viewSetup(); }
+  if (t.id === 'signout') { store.del('hc_admin'); state.token = ''; return showSignIn(); }
   if (t.id === 'publish') return publish();
   if (t.id === 'add-kv') { form.custom.push(['', '']); form.dirty = true; renderCustom(); const k = app.querySelectorAll('[data-ck]'); k[k.length - 1].focus(); return; }
   const carEl = t.closest('.car');
@@ -866,18 +957,28 @@ $('#back').addEventListener('click', () => {
 });
 
 /* ---------------------------------------------------------------- start */
+async function showSignIn(msg) {
+  const cfg = await loadLoginCfg();
+  if (cfg && window.crypto && crypto.subtle) viewLogin(cfg, msg); else viewSetup(msg);
+}
 (async function start() {
   let saved = null;
   try { saved = JSON.parse(store.get('hc_admin') || 'null'); } catch (e) {}
   if (saved && saved.token && saved.repo) {
     Object.assign(state, {repo: saved.repo, token: saved.token, branch: saved.branch || 'main'});
+    // if the repository was renamed, follow the name published in login.json
+    const cfg = await loadLoginCfg();
+    if (cfg && cfg.repo && cfg.repo.toLowerCase() !== state.repo.toLowerCase()) {
+      state.repo = cfg.repo; if (cfg.branch) state.branch = cfg.branch;
+      store.set('hc_admin', JSON.stringify({repo: state.repo, token: state.token, branch: state.branch}));
+    }
     loadPrefs();
     busy('Loading inventory…');
     try { await refresh(); viewList(); }
-    catch (e) { state.token = ''; viewSetup(e.message); }
+    catch (e) { state.token = ''; showSignIn(e.message); }
     finally { idle(); }
   } else {
-    viewSetup();
+    showSignIn();
   }
 })();
 })();

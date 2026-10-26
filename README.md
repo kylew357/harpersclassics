@@ -3,23 +3,17 @@
 A static website hosted free on GitHub Pages. No PHP and no server. You manage the inventory from your
 iPhone with a built-in admin page, or by adding folders to the repo.
 
-Live site: https://kylew357.github.io/harpersclasssics/
-Admin page: https://kylew357.github.io/harpersclasssics/admin/
+Live site: https://harpersclassics.com/
+Admin page: https://harpersclassics.com/admin/
 
 ## Add and edit cars from your iPhone
 
 The admin page lets you take photos, fill in the details and publish. Photos are resized on your phone
 before they upload, so there is nothing to resize by hand.
 
-**One-time setup (about 3 minutes):**
-1. In Safari, sign in to GitHub and open
-   [Settings → Developer settings → Fine-grained tokens → Generate new token](https://github.com/settings/personal-access-tokens/new).
-2. Name it "Site admin" and choose an expiration (up to one year; you'll make a new one when it expires).
-3. Under **Repository access** choose **Only select repositories** and pick this repository.
-4. Under **Permissions → Repository permissions** set **Contents** to **Read and write**.
-5. Generate the token and copy it.
-6. Open the admin page above, enter the repository name (`kylew357/harpersclasssics`), paste the token and sign in.
-7. Optional: tap the Share button in Safari and choose **Add to Home Screen** so the admin page opens like an app.
+**Signing in:** open the admin page and enter your username and password. You stay signed in on that device until you tap *Sign out*.
+
+The GitHub token that lets the admin page save changes is stored in `admin/login.json`, encrypted with your username and password (the plain token is never in the repository). Anyone can download that file, so a short password can be guessed. Use a long one. Tap *Change login* on the admin page to set a new username/password, or to save a new token when the old one expires (a fine-grained token with **Contents: Read and write** on this repository; it lasts up to a year). If the token has expired, use *Sign in with a GitHub token instead* on the login page, then *Change login*.
 
 **Every day:**
 - **Add a car:** tap *+ Add a car*, fill in the title, price and details, tap *Add photos* (pick from your library or take
@@ -35,9 +29,8 @@ before they upload, so there is nothing to resize by hand.
 
 Changes go live about a minute after you publish.
 
-**About the token:** it is saved only in the browser on your phone, and it can only touch this one repository.
-If you lose your phone, delete the token in GitHub's token settings. Anyone can open the admin page address,
-but it does nothing without a token.
+**About the token:** it can only touch this one repository. If you lose your phone, delete the token in GitHub's
+token settings and make a new one.
 
 ## Add a car without the admin page
 
