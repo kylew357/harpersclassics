@@ -48,7 +48,8 @@ input,select,textarea{display:block;width:100%;margin-top:6px;padding:13px 15px;
 select{background-image:linear-gradient(45deg,transparent 50%,#666 50%),linear-gradient(135deg,#666 50%,transparent 50%);background-position:calc(100% - 20px) 50%,calc(100% - 14px) 50%;background-size:6px 6px;background-repeat:no-repeat;padding-right:38px}
 textarea{min-height:170px;resize:vertical}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ink)}
-input::placeholder,textarea::placeholder{color:#bbb6ac;opacity:1;-webkit-text-fill-color:#bbb6ac}
+input::placeholder,textarea::placeholder{color:#c9c5bc;opacity:1;-webkit-text-fill-color:#c9c5bc}
+select.empty{color:#c9c5bc}   /* an unchosen menu looks like an empty field */
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media (max-width:540px){.row2{grid-template-columns:1fr;gap:0}.row2.short{grid-template-columns:1fr 1fr;gap:12px}}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:12px}
@@ -532,7 +533,7 @@ function renderCarForm() {
       <div class="row2">${inp('Engine', 'Engine', '360 V8')}${inp('Transmission', 'Transmission', 'Automatic')}</div>
       ${inp('Drivetrain', 'Drivetrain', '4x4')}
       <label>Badge
-        <select id="f-status"><option value="">None</option>${statuses.map(s => `<option${s === f.status ? ' selected' : ''}>${esc(s)}</option>`).join('')}</select></label>
+        <select id="f-status"${f.status ? '' : ' class="empty"'}><option value="">None</option>${statuses.map(s => `<option${s === f.status ? ' selected' : ''}>${esc(s)}</option>`).join('')}</select></label>
       <label id="bat-wrap"${f.status === BAT ? '' : ' hidden'}>Bring a Trailer link <small>Paste the link to this car's listing. A “View on Bring a Trailer” button on the car's page opens it.</small>
         <input id="f-bat" type="url" inputmode="url" value="${esc(f.batUrl)}" placeholder="https://bringatrailer.com/listing/…" autocapitalize="off" autocorrect="off" spellcheck="false"></label>
       <label>Description <small>The first paragraph shows on the gallery tile. Leave a blank line between paragraphs.</small>
@@ -855,7 +856,7 @@ app.addEventListener('change', ev => {
   if (el.id === 'sort') { state.sort = el.value; store.set('hc_sort', state.sort); viewList(true); return; }
   if (el.id === 'g-files' && gal) { addGalleryPhotos(el.files).then(() => { el.value = ''; }); return; }
   if (!form) return;
-  if (el.id === 'f-status') { form.status = el.value; form.dirty = true; const w = $('#bat-wrap'); if (w) w.hidden = form.status !== BAT; }
+  if (el.id === 'f-status') { form.status = el.value; el.classList.toggle('empty', !el.value); form.dirty = true; const w = $('#bat-wrap'); if (w) w.hidden = form.status !== BAT; }
   if (el.id === 'f-files') { addPhotos(el.files).then(() => { el.value = ''; }); }
 });
 $('#back').addEventListener('click', () => {
