@@ -46,6 +46,7 @@
     var stage = box.querySelector('.lb-stage');
     var slides = Array.prototype.slice.call(box.querySelectorAll('.lb-slide'));
     var lbCount = box.querySelector('.lb-count');
+    var prevBtn = box.querySelector('.lb-prev'), nextBtn = box.querySelector('.lb-next');
     var many = images.length > 1;
     var index = 0;
     var order = [0, 1, 2];       // order[role] = which slide element is previous (0), current (1) or next (2)
@@ -103,7 +104,10 @@
       setSrc(slides[order[1]], index);
       setSrc(slides[order[0]], wrap(index - 1));
       setSrc(slides[order[2]], wrap(index + 1));
-      slides[order[0]].hidden = slides[order[2]].hidden = !many;
+      slides[order[0]].hidden = !many || index === 0;                       // nothing before the first photo
+      slides[order[2]].hidden = !many || index === images.length - 1;      // nothing after the last one
+      prevBtn.style.visibility = index === 0 ? 'hidden' : '';
+      nextBtn.style.visibility = index === images.length - 1 ? 'hidden' : '';
       lbCount.textContent = (index + 1) + ' / ' + images.length;
       warmAround();
     }
@@ -127,9 +131,9 @@
     }
     // d = +1 next photo, -1 previous photo
     function go(d) {
-      if (animating || !many) return;
+      if (animating || !many || index + d < 0 || index + d >= images.length) return;   // stops at the first and last photo
       animating = true;
-      index = wrap(index + d);
+      index = index + d;
       if (onShow) onShow(index);               // page behind + thumbnails
       place(-d * width(), true);               // slide the neighbour in
       setTimeout(function () {
@@ -179,7 +183,8 @@
         g.axis = Math.abs(g.dx) > Math.abs(g.dy) ? 'x' : 'y';
       }
       if (g.axis === 'x' && many) {
-        place(g.dx, false);
+        var past = (g.dx > 0 && index === 0) || (g.dx < 0 && index === images.length - 1);
+        place(past ? g.dx / 4 : g.dx, false);                    // rubber-band when there is no photo that way
       } else if (g.axis === 'y' && g.dy > 0) {
         stage.style.transform = 'translateY(' + g.dy + 'px)';
         box.style.background = 'rgba(10, 9, 8, ' + Math.max(0.35, 0.98 - g.dy / 600) + ')';
@@ -190,7 +195,8 @@
       if (!s || !s.axis) { if (cancelled) snap(); return; }
       var speed = Math.abs(s.dx) / Math.max(1, Date.now() - s.t);
       if (s.axis === 'x' && many && (Math.abs(s.dx) > 60 || (speed > 0.4 && Math.abs(s.dx) > 25))) {
-        go(s.dx < 0 ? 1 : -1);                 // swipe left shows the next photo
+        var d = s.dx < 0 ? 1 : -1;               // swipe left shows the next photo
+        if (index + d < 0 || index + d >= images.length) snap(); else go(d);
       } else if (!cancelled && s.axis === 'y' && s.dy > 100) {
         closeBox();
       } else {
