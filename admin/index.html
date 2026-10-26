@@ -419,12 +419,21 @@ async function sealLogin(cfg, user, pass, token) {
   const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
   const key = await loginKey(user, pass, salt, KDF_ITER);
   const ct = await crypto.subtle.encrypt({name: 'AES-GCM', iv}, key, new TextEncoder().encode(JSON.stringify({token})));
-  return {v: 1, repo: cfg.repo, branch: cfg.branch, iter: KDF_ITER, salt: b64e(salt), iv: b64e(iv), ct: b64e(new Uint8Array(ct))};
+  return {v: 1, repo: cfg.repo, alt: cfg.alt || [], branch: cfg.branch, iter: KDF_ITER, salt: b64e(salt), iv: b64e(iv), ct: b64e(new Uint8Array(ct))};
 }
 async function openLogin(cfg, user, pass) {
   const key = await loginKey(user, pass, b64d(cfg.salt), cfg.iter || KDF_ITER);
   const pt = await crypto.subtle.decrypt({name: 'AES-GCM', iv: b64d(cfg.iv)}, key, b64d(cfg.ct));   // throws on a wrong username or password
   return JSON.parse(new TextDecoder().decode(pt)).token;
+}
+// The repository may have been renamed: try the name in login.json, then any alternatives; the first one GitHub can see wins.
+async function pickRepo(cfg) {
+  let last = null;
+  for (const name of [cfg.repo].concat(cfg.alt || [])) {
+    state.repo = name;
+    try { await api('https://api.github.com/repos/' + name); return name; } catch (e) { last = e; if (e.status === 401) throw e; }
+  }
+  throw last || new Error('Repository not found.');
 }
 async function loadLoginCfg() {
   try {
@@ -441,14 +450,21 @@ function viewLogin(cfg, msg) {
     ${msg ? '<p style="color:var(--danger)">' + esc(msg) + '</p>' : ''}
     <form id="login" autocomplete="on">
       <label>Username
-        <input id="l-user" name="username" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" required></label>
+        <input id="l-user" name="hc-user" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" required></label>
       <label>Password
-        <input id="l-pass" name="password" type="password" autocomplete="current-password" required></label>
+        <input id="l-pass" name="hc-pass" type="password" autocomplete="off" required></label>
       <button class="btn primary big" type="submit">Sign in</button>
       <p class="hint">You stay signed in on this device until you tap Sign out.</p>
     </form>
     <p class="hint"><a href="#" id="use-token">Sign in with a GitHub token instead</a></p>`;
   $('#use-token').addEventListener('click', ev => { ev.preventDefault(); viewSetup(); });
+  // Browsers sometimes fill these boxes with an old saved sign-in (repository name + token). Start empty, and wipe anything filled in before you type.
+  let typed = false;
+  ['#l-user', '#l-pass'].forEach(sel => {
+    const el = $(sel);
+    el.addEventListener('input', () => { typed = true; });
+  });
+  [0, 150, 500, 1200].forEach(ms => setTimeout(() => { if (!typed && $('#l-user')) { $('#l-user').value = ''; $('#l-pass').value = ''; } }, ms));
   $('#login').addEventListener('submit', async ev => {
     ev.preventDefault();
     busy('Signing in…');
@@ -457,7 +473,7 @@ function viewLogin(cfg, msg) {
     catch (e) { idle(); viewLogin(cfg, 'Wrong username or password.'); return; }
     try {
       Object.assign(state, {repo: cfg.repo, token, branch: cfg.branch || 'main'});
-      await api('https://api.github.com/repos/' + state.repo);
+      await pickRepo(cfg);
       store.set('hc_admin', JSON.stringify({repo: state.repo, token, branch: state.branch}));
       loadPrefs();
       await refresh();
@@ -484,7 +500,8 @@ async function viewChangeLogin() {
     if (!user || !pass) { toast('Enter a username and a password.', true); return; }
     busy('Saving login…');
     try {
-      const sealed = await sealLogin({repo: state.repo, branch: state.branch}, user, pass, tok);
+      const prev = await loadLoginCfg();
+      const sealed = await sealLogin({repo: state.repo, alt: prev && prev.alt && prev.alt.filter(n => n.toLowerCase() !== state.repo.toLowerCase()), branch: state.branch}, user, pass, tok);
       await refresh();
       await commit([{path: 'admin/login.json', text: JSON.stringify(sealed, null, 2) + '\n'}], 'Update admin login');
       if (tok !== state.token) { state.token = tok; store.set('hc_admin', JSON.stringify({repo: state.repo, token: tok, branch: state.branch})); }
@@ -969,8 +986,12 @@ async function showSignIn(msg) {
     // if the repository was renamed, follow the name published in login.json
     const cfg = await loadLoginCfg();
     if (cfg && cfg.repo && cfg.repo.toLowerCase() !== state.repo.toLowerCase()) {
-      state.repo = cfg.repo; if (cfg.branch) state.branch = cfg.branch;
-      store.set('hc_admin', JSON.stringify({repo: state.repo, token: state.token, branch: state.branch}));
+      const keep = state.repo;
+      try {
+        state.repo = cfg.repo; await api('https://api.github.com/repos/' + cfg.repo);
+        if (cfg.branch) state.branch = cfg.branch;
+        store.set('hc_admin', JSON.stringify({repo: state.repo, token: state.token, branch: state.branch}));
+      } catch (e) { state.repo = keep; }
     }
     loadPrefs();
     busy('Loading inventory…');
