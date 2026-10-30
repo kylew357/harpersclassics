@@ -1,4 +1,5 @@
-Status: Auction Soon
+Status: Bring a Trailer
+Bring a Trailer URL: https://bringatrailer.com/listing/2002-toyota-tacoma-94/
 Year: 2002
 Mileage: 75,000
 Color: Green
