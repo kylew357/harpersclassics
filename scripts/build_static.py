@@ -387,6 +387,9 @@ def page(title, active, body, desc=None):
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{h(full_title)}</title>
 {desc_tag}<meta property="og:title" content="{h(full_title)}">
+<link rel="icon" href="assets/favicon.ico?v={asset_v('favicon.ico')}" sizes="48x48">
+<link rel="icon" type="image/png" href="assets/favicon-32.png?v={asset_v('favicon-32.png')}" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v={asset_v('apple-touch-icon.png')}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
