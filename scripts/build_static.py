@@ -214,8 +214,8 @@ def load_car(kind, name, slug):
             break
 
     status = spec_get(specs, 'status')
-    if not status and kind == 'sold':
-        status = 'Sold'
+    if kind == 'sold':
+        status = 'Sold'   # always "Sold" on the sold page, whatever badge the car had while for sale
 
     return {
         'kind': kind, 'name': name, 'slug': slug, 'images': images, 'photos': [],
